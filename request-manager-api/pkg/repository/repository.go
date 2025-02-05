@@ -1,12 +1,18 @@
 package repository
 
-import "github.com/jmoiron/sqlx"
+import (
+	"github.com/jmoiron/sqlx"
+	Request_Manager "request_manager_api"
+)
 
 type Ticket interface {
 }
 type Notification interface {
 }
 type Authorization interface {
+	CreateAdmin(user Request_Manager.User) (int, error)
+	CreateUser(user Request_Manager.User) (int, error)
+	GetUser(username, password string) (Request_Manager.User, error)
 }
 type Admin interface {
 }
@@ -18,5 +24,7 @@ type Repository struct {
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
-	return &Repository{}
+	return &Repository{
+		Authorization: NewAuthMysql(db),
+	}
 }
