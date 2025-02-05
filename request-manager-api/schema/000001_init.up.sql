@@ -1,0 +1,47 @@
+CREATE TABLE Role (
+                      RoleID INT AUTO_INCREMENT PRIMARY KEY,
+                      RoleName VARCHAR(50) NOT NULL UNIQUE,
+                      CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                      UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE User (
+                      UserID INT AUTO_INCREMENT PRIMARY KEY,
+                      FirstName VARCHAR(100) NOT NULL,
+                      LastName VARCHAR(100) NOT NULL,
+                      Email VARCHAR(255) NOT NULL UNIQUE,
+                      RoleID INT NOT NULL,
+                      CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                      UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                      FOREIGN KEY (RoleID) REFERENCES Role(RoleID) ON DELETE CASCADE
+);
+
+CREATE TABLE TicketStatus (
+                              StatusID INT AUTO_INCREMENT PRIMARY KEY,
+                              Status VARCHAR(50) NOT NULL UNIQUE,
+                              CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                              UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Ticket (
+                        TicketID INT AUTO_INCREMENT PRIMARY KEY,
+                        Title VARCHAR(255) NOT NULL,
+                        Description TEXT,
+                        StatusID INT NOT NULL,
+                        CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        AssignedTo INT NULL,
+                        UserID INT NOT NULL,
+                        FOREIGN KEY (StatusID) REFERENCES TicketStatus(StatusID) ON DELETE CASCADE,
+                        FOREIGN KEY (AssignedTo) REFERENCES User(UserID) ON DELETE SET NULL,
+                        FOREIGN KEY (UserID) REFERENCES User(UserID) ON DELETE CASCADE
+);
+
+CREATE TABLE Notification (
+                              NotificationID INT AUTO_INCREMENT PRIMARY KEY,
+                              Message TEXT NOT NULL,
+                              UserID INT NOT NULL,
+                              CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                              UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                              FOREIGN KEY (UserID) REFERENCES User(UserID) ON DELETE CASCADE
+);
