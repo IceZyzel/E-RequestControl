@@ -12,7 +12,15 @@ func (h *Handlers) getAllTickets(c *gin.Context) {
 func (h *Handlers) getTicketByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "getTicketByID endpoint"})
 }
-
+func (h *Handlers) adminDeleteTicket(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "getTicketByID endpoint"})
+}
+func (h *Handlers) adminUpdateTicket(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "getTicketByID endpoint"})
+}
+func (h *Handlers) getUserTickets(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "createTicket endpoint"})
+}
 func (h *Handlers) createTicket(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "createTicket endpoint"})
 }
@@ -24,7 +32,12 @@ func (h *Handlers) updateTicket(c *gin.Context) {
 func (h *Handlers) deleteTicket(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "deleteTicket endpoint"})
 }
-
+func (h *Handlers) getUserNotifications(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "deleteTicket endpoint"})
+}
+func (h *Handlers) markNotificationAsRead(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "deleteTicket endpoint"})
+}
 func (h *Handlers) getTicketStatuses(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "getTicketStatuses endpoint"})
 }
@@ -51,7 +64,9 @@ func (h *Handlers) deleteStatus(c *gin.Context) {
 func (h *Handlers) getAllUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "getAllUsers endpoint"})
 }
-
+func (h *Handlers) createUser(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "getUserByID endpoint"})
+}
 func (h *Handlers) getUserByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "getUserByID endpoint"})
 }
@@ -72,14 +87,24 @@ func (h *Handlers) updateUserRole(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "updateUserRole endpoint"})
 }
 
-func (h *Handlers) getAdminDashboard(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "getAdminDashboard endpoint"})
-}
-
-func (h *Handlers) getAnalyticsData(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "getAnalyticsData endpoint"})
-}
-
 func (h *Handlers) createNotification(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "createNotification endpoint"})
+}
+func (h *Handlers) getAllNotifications(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "createNotification endpoint"})
+}
+func (h *Handlers) deleteNotification(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "createNotification endpoint"})
+}
+func (h *Handlers) backupData(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "createNotification endpoint"})
+}
+func (h *Handlers) restoreData(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "createNotification endpoint"})
+}
+func (h *Handlers) exportData(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "createNotification endpoint"})
+}
+func (h *Handlers) importData(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "createNotification endpoint"})
 }
