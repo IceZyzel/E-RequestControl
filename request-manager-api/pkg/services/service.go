@@ -16,6 +16,7 @@ type Authorization interface {
 	ParseToken(token string) (int, error)
 }
 type Admin interface {
+	GetUserByID(userID int) (Request_Manager.User, error)
 }
 type Service struct {
 	Authorization
@@ -27,5 +28,6 @@ type Service struct {
 func NewService(repos *repository.Repository) *Service {
 	return &Service{
 		Authorization: NewAuthService(repos.Authorization),
+		Admin:         NewAdminService(repos.Admin),
 	}
 }

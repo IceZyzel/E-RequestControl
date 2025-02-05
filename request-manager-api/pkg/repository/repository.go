@@ -15,6 +15,7 @@ type Authorization interface {
 	GetUser(username, password string) (Request_Manager.User, error)
 }
 type Admin interface {
+	GetUserByID(userID int) (Request_Manager.User, error)
 }
 type Repository struct {
 	Ticket
@@ -26,5 +27,6 @@ type Repository struct {
 func NewRepository(db *sqlx.DB) *Repository {
 	return &Repository{
 		Authorization: NewAuthMysql(db),
+		Admin:         NewAdminMysql(db),
 	}
 }

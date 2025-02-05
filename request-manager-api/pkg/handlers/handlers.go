@@ -39,7 +39,7 @@ func (h *Handlers) InitRoutes() *gin.Engine {
 		}
 	}
 
-	admin := router.Group("/api/admin")
+	admin := router.Group("/admin", h.adminRequired)
 	{
 		adminTickets := admin.Group("/tickets")
 		{
