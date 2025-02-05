@@ -17,6 +17,10 @@ type Authorization interface {
 }
 type Admin interface {
 	GetUserByID(userID int) (Request_Manager.User, error)
+	CreateUser(user Request_Manager.User) (int, error)
+	GetAllUsers() ([]Request_Manager.User, error)
+	Delete(UserID int) error
+	UpdateUser(UserID int, input Request_Manager.UpdateUserInput, user Request_Manager.User) error
 }
 type Service struct {
 	Authorization

@@ -10,6 +10,8 @@ CREATE TABLE User (
                       FirstName VARCHAR(100) NOT NULL,
                       LastName VARCHAR(100) NOT NULL,
                       Email VARCHAR(255) NOT NULL UNIQUE,
+                      Username VARCHAR(255) UNIQUE,
+                      Password VARCHAR(255),
                       RoleID INT NOT NULL,
                       CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                       UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

@@ -3,6 +3,8 @@ package handlers
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
+	Request_Manager "request_manager_api"
+	"strconv"
 )
 
 func (h *Handlers) getAllTickets(c *gin.Context) {
@@ -62,21 +64,76 @@ func (h *Handlers) deleteStatus(c *gin.Context) {
 }
 
 func (h *Handlers) getAllUsers(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "getAllUsers endpoint"})
+	users, err := h.service.Admin.GetAllUsers()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, users)
 }
 func (h *Handlers) createUser(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "getUserByID endpoint"})
+	var user Request_Manager.User
+	if err := c.BindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request body"})
+		return
+	}
+	id, err := h.service.Admin.CreateUser(user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"UserID": id,
+	})
 }
 func (h *Handlers) getUserByID(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "getUserByID endpoint"})
+	userID, err := strconv.Atoi(c.Param("userID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid user ID"})
+		return
+	}
+	user, err := h.service.GetUserByID(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, user)
 }
 
 func (h *Handlers) updateUser(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "updateUser endpoint"})
+	userIDStr := c.Param("userID")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "Invalid UserID")
+		return
+	}
+	var input Request_Manager.UpdateUserInput
+	var userInput Request_Manager.User
+	if err := c.BindJSON(&input); err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	err = h.service.Admin.UpdateUser(userID, input, userInput)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, statusResponse{
+		Status: "Ok",
+	})
 }
 
 func (h *Handlers) deleteUser(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "deleteUser endpoint"})
+	userID, err := strconv.Atoi(c.Param("userID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid user ID"})
+		return
+	}
+	if err := h.service.Admin.Delete(userID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "User deleted"})
 }
 
 func (h *Handlers) getUserRoles(c *gin.Context) {

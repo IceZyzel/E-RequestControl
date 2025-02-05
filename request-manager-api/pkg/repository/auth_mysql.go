@@ -20,14 +20,14 @@ func getCurrentTimeInUkraine() string {
 	if err != nil {
 		log.Fatal("Error loading Ukraine timezone: ", err)
 	}
-	return time.Now().In(ukraineLocation).Format("2006-01-02 15:04:05")
+	return time.Now().In(ukraineLocation).Add(2 * time.Hour).Format("2006-01-02 15:04:05")
 }
 
 func (r *AuthMysql) CreateUser(user Request_Manager.User) (int, error) {
 
 	currentTime := getCurrentTimeInUkraine()
 
-	query := "INSERT INTO User (username, email, password, role, firstName, lastName, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+	query := "INSERT INTO User (username, email, password, roleID, firstName, lastName, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
 	result, err := r.db.Exec(query, user.Username, user.Email, user.Password, 2, user.FirstName, user.LastName, currentTime, currentTime)
 	if err != nil {
 		return 0, err
@@ -42,7 +42,7 @@ func (r *AuthMysql) CreateUser(user Request_Manager.User) (int, error) {
 func (r *AuthMysql) CreateAdmin(user Request_Manager.User) (int, error) {
 	currentTime := getCurrentTimeInUkraine()
 
-	query := "INSERT INTO User (username, email, password, role, firstName, lastName, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+	query := "INSERT INTO User (username, email, password, roleID, firstName, lastName, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
 	result, err := r.db.Exec(query, user.Username, user.Email, user.Password, 1, user.FirstName, user.LastName, currentTime, currentTime)
 	if err != nil {
 		return 0, err
