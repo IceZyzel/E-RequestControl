@@ -23,7 +23,7 @@ func (h *Handlers) InitRoutes() *gin.Engine {
 		auth.POST("/login", h.login)
 	}
 
-	api := router.Group("/api")
+	api := router.Group("/api", h.userIdentity)
 	{
 		tickets := api.Group("/tickets")
 		{
@@ -53,14 +53,6 @@ func (h *Handlers) InitRoutes() *gin.Engine {
 			adminNotifications.GET("/", h.getAllNotifications)
 			adminNotifications.POST("/", h.createNotification)
 			adminNotifications.DELETE("/:notificationID", h.deleteNotification)
-		}
-		statuses := admin.Group("/statuses")
-		{
-			statuses.GET("/", h.getAllStatuses)
-			statuses.GET("/:statusID", h.getStatusByID)
-			statuses.POST("/", h.createStatus)
-			statuses.PUT("/:statusID", h.updateStatus)
-			statuses.DELETE("/:statusID", h.deleteStatus)
 		}
 
 		users := admin.Group("/users")

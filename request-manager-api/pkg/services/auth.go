@@ -30,11 +30,23 @@ func NewAuthService(repo repository.Authorization) *AuthService {
 }
 
 func (s *AuthService) CreateUser(user Request_Manager.User) (int, error) {
+	if err := user.ValidatePassword(); err != nil {
+		return 0, err
+	}
+	if err := user.ValidateEmail(); err != nil {
+		return 0, err
+	}
 	user.Password = generatePasswordHash(user.Password)
 	return s.repo.CreateUser(user)
 }
 
 func (s *AuthService) CreateAdmin(user Request_Manager.User) (int, error) {
+	if err := user.ValidatePassword(); err != nil {
+		return 0, err
+	}
+	if err := user.ValidateEmail(); err != nil {
+		return 0, err
+	}
 	user.Password = generatePasswordHash(user.Password)
 	return s.repo.CreateAdmin(user)
 }

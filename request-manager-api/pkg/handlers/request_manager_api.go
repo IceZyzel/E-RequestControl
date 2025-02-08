@@ -21,18 +21,74 @@ func (h *Handlers) adminUpdateTicket(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "getTicketByID endpoint"})
 }
 func (h *Handlers) getUserTickets(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "createTicket endpoint"})
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid user ID"})
+		return
+	}
+	testResults, err := h.service.Ticket.GetUserTickets(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, testResults)
 }
 func (h *Handlers) createTicket(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "createTicket endpoint"})
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid user ID"})
+		return
+	}
+
+	var ticket Request_Manager.Ticket
+	if err := c.ShouldBindJSON(&ticket); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ticket.UserID = userID
+
+	id, err := h.service.CreateTicket(ticket)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"id": id})
 }
 
 func (h *Handlers) updateTicket(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "updateTicket endpoint"})
+	ticketID := c.Param("ticketID")
+	id, err := strconv.Atoi(ticketID)
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "Invalid id param")
+		return
+	}
+
+	var input Request_Manager.UpdateTicketInput
+	if err := c.BindJSON(&input); err != nil {
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err = h.service.Ticket.UpdateTicket(id, input)
+
+	c.JSON(http.StatusOK, statusResponse{
+		Status: "Ok",
+	})
 }
 
 func (h *Handlers) deleteTicket(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "deleteTicket endpoint"})
+	ticketID, err := strconv.Atoi(c.Param("ticketID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid ticket ID"})
+		return
+	}
+	if err := h.service.Ticket.DeleteTicket(ticketID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Ticket deleted"})
 }
 func (h *Handlers) getUserNotifications(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "deleteTicket endpoint"})

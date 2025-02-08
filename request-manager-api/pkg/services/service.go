@@ -6,6 +6,10 @@ import (
 )
 
 type Ticket interface {
+	GetUserTickets(userID int) ([]Request_Manager.Ticket, error)
+	CreateTicket(ticket Request_Manager.Ticket) (int, error)
+	UpdateTicket(ticketID int, input Request_Manager.UpdateTicketInput) error
+	DeleteTicket(ticketID int) error
 }
 type Notification interface {
 }
@@ -33,5 +37,6 @@ func NewService(repos *repository.Repository) *Service {
 	return &Service{
 		Authorization: NewAuthService(repos.Authorization),
 		Admin:         NewAdminService(repos.Admin),
+		Ticket:        NewTicketService(repos.Ticket),
 	}
 }

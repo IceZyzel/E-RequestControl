@@ -6,6 +6,10 @@ import (
 )
 
 type Ticket interface {
+	GetUserTickets(userID int) ([]Request_Manager.Ticket, error)
+	CreateTicket(ticket Request_Manager.Ticket) (int, error)
+	UpdateTicket(ticketID int, input Request_Manager.UpdateTicketInput) error
+	DeleteTicket(ticketID int) error
 }
 type Notification interface {
 }
@@ -32,5 +36,6 @@ func NewRepository(db *sqlx.DB) *Repository {
 	return &Repository{
 		Authorization: NewAuthMysql(db),
 		Admin:         NewAdminMysql(db),
+		Ticket:        NewTicketMysql(db),
 	}
 }

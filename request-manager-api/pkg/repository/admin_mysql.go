@@ -21,8 +21,7 @@ func NewAdminMysql(db *sqlx.DB) *AdminMysql {
 
 func (r *AdminMysql) GetUserByID(userID int) (Request_Manager.User, error) {
 	var user Request_Manager.User
-	query := `SELECT UserID, Username, Password, FirstName, LastName, Email, RoleID, CreatedAt, UpdatedAt 
-	          FROM User WHERE UserID = ?`
+	query := `SELECT * FROM User WHERE UserID = ?`
 	err := r.db.Get(&user, query, userID)
 	if err != nil {
 		log.Printf("Error fetching user by ID %d: %s", userID, err)
@@ -31,7 +30,7 @@ func (r *AdminMysql) GetUserByID(userID int) (Request_Manager.User, error) {
 }
 func (r *AdminMysql) GetAllUsers() ([]Request_Manager.User, error) {
 	var users []Request_Manager.User
-	query := fmt.Sprintf("SELECT UserID, Username, Password, FirstName, LastName, Email, RoleID, CreatedAt, UpdatedAt FROM User")
+	query := fmt.Sprintf("SELECT * FROM User")
 	err := r.db.Select(&users, query)
 	if err != nil {
 		log.Printf("Error fetching all users: %s", err)
