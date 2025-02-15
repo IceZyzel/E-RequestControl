@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"os"
 	Request_Manager "request_manager_api"
 	"strconv"
 )
@@ -48,7 +49,7 @@ func (h *Handlers) createTicket(c *gin.Context) {
 
 	ticket.UserID = userID
 
-	id, err := h.service.CreateTicket(ticket)
+	id, err := h.service.Ticket.CreateTicket(userID, ticket)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -58,6 +59,12 @@ func (h *Handlers) createTicket(c *gin.Context) {
 }
 
 func (h *Handlers) updateTicket(c *gin.Context) {
+	userID, err := getUserID(c)
+	if err != nil {
+		newErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
 	ticketID := c.Param("ticketID")
 	id, err := strconv.Atoi(ticketID)
 	if err != nil {
@@ -66,12 +73,16 @@ func (h *Handlers) updateTicket(c *gin.Context) {
 	}
 
 	var input Request_Manager.UpdateTicketInput
-	if err := c.BindJSON(&input); err != nil {
+	if err := c.ShouldBindJSON(&input); err != nil { // Используем только один раз
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	err = h.service.Ticket.UpdateTicket(id, input)
+	err = h.service.Ticket.UpdateTicket(userID, id, input)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
 
 	c.JSON(http.StatusOK, statusResponse{
 		Status: "Ok",
@@ -91,7 +102,19 @@ func (h *Handlers) deleteTicket(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Ticket deleted"})
 }
 func (h *Handlers) getUserNotifications(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "deleteTicket endpoint"})
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid user ID"})
+		return
+	}
+
+	notifications, err := h.service.Notification.GetAllUserNotification(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch notifications"})
+		return
+	}
+
+	c.JSON(http.StatusOK, notifications)
 }
 func (h *Handlers) markNotificationAsRead(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "deleteTicket endpoint"})
@@ -201,23 +224,102 @@ func (h *Handlers) updateUserRole(c *gin.Context) {
 }
 
 func (h *Handlers) createNotification(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "createNotification endpoint"})
+	var notification Request_Manager.Notification
+	if err := c.BindJSON(&notification); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request body"})
+		return
+	}
+	id, err := h.service.Notification.Create(notification)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"id": id})
 }
 func (h *Handlers) getAllNotifications(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "createNotification endpoint"})
+	notification, err := h.service.Notification.GetAll()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, notification)
 }
 func (h *Handlers) deleteNotification(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "createNotification endpoint"})
+	notificationID, err := strconv.Atoi(c.Param("notificationID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	if err := h.service.Notification.Delete(notificationID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Notification deleted"})
 }
 func (h *Handlers) backupData(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "createNotification endpoint"})
+	backupPath := "backup.sql"
+
+	file, err := os.Create(backupPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to create backup file",
+		})
+		return
+	}
+	defer file.Close()
+
+	if err := h.service.Admin.BackupData(backupPath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to backup data",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Data backup successful",
+	})
 }
 func (h *Handlers) restoreData(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "createNotification endpoint"})
+	restorePath := "backup.sql"
+
+	if err := h.service.Admin.RestoreData(restorePath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to restore data",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Data restore successful",
+	})
 }
 func (h *Handlers) exportData(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "createNotification endpoint"})
+	exportPath := "export.xlsx"
+
+	if err := h.service.Admin.ExportData(exportPath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to export data"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Data export successful"})
 }
 func (h *Handlers) importData(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "createNotification endpoint"})
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	uploadPath := file.Filename
+	if err := c.SaveUploadedFile(file, uploadPath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
+		return
+	}
+
+	if err := h.service.Admin.ImportData(uploadPath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Data imported successfully"})
 }

@@ -27,14 +27,6 @@ type UpdateTicketInput struct {
 	UserID      *int    `json:"UserID" db:"UserID"`
 }
 
-func (i UpdateTicketInput) Validate() error {
-	if i.TicketID == nil && i.Title == nil && i.Description == nil && i.StatusID == nil && i.CreatedAt == nil &&
-		i.UpdatedAt == nil && i.AssignedTo == nil && i.UserID == nil {
-		return errors.New("Update structure has no value")
-	}
-	return nil
-}
-
 type TicketStatus struct {
 	StatusID  int    `json:"StatusID" db:"StatusID"`
 	Status    string `json:"Status" db:"Status"`
@@ -55,4 +47,12 @@ type Notification struct {
 	UserID         int    `json:"UserID" db:"UserID"`
 	CreatedAt      string `json:"CreatedAt" db:"CreatedAt"`
 	UpdatedAt      string `json:"UpdatedAt" db:"UpdatedAt"`
+}
+
+func (i UpdateTicketInput) Validate() error {
+	if i.TicketID == nil && i.Title == nil && i.Description == nil && i.StatusID == nil && i.CreatedAt == nil &&
+		i.UpdatedAt == nil && i.AssignedTo == nil && i.UserID == nil {
+		return errors.New("Update structure has no value")
+	}
+	return nil
 }

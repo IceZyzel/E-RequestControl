@@ -46,3 +46,36 @@ func (s *AdministratorService) GetAllUsers() ([]Request_Manager.User, error) {
 func (s *AdministratorService) Delete(UserID int) error {
 	return s.repo.Delete(UserID)
 }
+
+func (s *AdministratorService) BackupData(backupPath string) error {
+	err := s.repo.BackupData(backupPath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+func (s *AdministratorService) RestoreData(backupPath string) error {
+	err := s.repo.RestoreData(backupPath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+func (s *AdministratorService) ExportData(exportPath string) error {
+	err := s.repo.ExportData(exportPath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+func (s *AdministratorService) ImportData(importPath string) error {
+	err := s.repo.ImportData(importPath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

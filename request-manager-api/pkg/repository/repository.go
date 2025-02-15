@@ -7,11 +7,15 @@ import (
 
 type Ticket interface {
 	GetUserTickets(userID int) ([]Request_Manager.Ticket, error)
-	CreateTicket(ticket Request_Manager.Ticket) (int, error)
-	UpdateTicket(ticketID int, input Request_Manager.UpdateTicketInput) error
+	CreateTicket(userID int, ticket Request_Manager.Ticket) (int, error)
+	UpdateTicket(userID int, ticketID int, input Request_Manager.UpdateTicketInput) error
 	DeleteTicket(ticketID int) error
 }
 type Notification interface {
+	GetAllUserNotification(userID int) ([]Request_Manager.Notification, error)
+	Create(notification Request_Manager.Notification) (int, error) //эта функция
+	Delete(notificationID int) error
+	GetAll() ([]Request_Manager.Notification, error)
 }
 type Authorization interface {
 	CreateAdmin(user Request_Manager.User) (int, error)
@@ -24,6 +28,10 @@ type Admin interface {
 	GetAllUsers() ([]Request_Manager.User, error)
 	Delete(UserID int) error
 	UpdateUser(UserID int, input Request_Manager.UpdateUserInput, user Request_Manager.User) error
+	BackupData(backupPath string) error
+	RestoreData(backupPath string) error
+	ImportData(backupPath string) error
+	ExportData(backupPath string) error
 }
 type Repository struct {
 	Ticket
@@ -33,9 +41,11 @@ type Repository struct {
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
+	notificationRepo := NewNotificationMysql(db)
 	return &Repository{
 		Authorization: NewAuthMysql(db),
 		Admin:         NewAdminMysql(db),
-		Ticket:        NewTicketMysql(db),
+		Ticket:        NewTicketMysql(db, notificationRepo),
+		Notification:  NewNotificationMysql(db),
 	}
 }

@@ -13,8 +13,8 @@ func NewTicketService(repo repository.Ticket) *TicketService {
 	return &TicketService{repo: repo}
 }
 
-func (s *TicketService) CreateTicket(ticket Request_Manager.Ticket) (int, error) {
-	return s.repo.CreateTicket(ticket)
+func (s *TicketService) CreateTicket(userID int, ticket Request_Manager.Ticket) (int, error) {
+	return s.repo.CreateTicket(userID, ticket)
 }
 
 func (s *TicketService) GetUserTickets(ticketID int) ([]Request_Manager.Ticket, error) {
@@ -24,10 +24,10 @@ func (s *TicketService) GetUserTickets(ticketID int) ([]Request_Manager.Ticket, 
 func (s *TicketService) DeleteTicket(ticketID int) error {
 	return s.repo.DeleteTicket(ticketID)
 }
-func (s *TicketService) UpdateTicket(ticketID int, input Request_Manager.UpdateTicketInput) error {
+func (s *TicketService) UpdateTicket(userID int, ticketID int, input Request_Manager.UpdateTicketInput) error {
 	if err := input.Validate(); err != nil {
 		return err
 	}
 
-	return s.repo.UpdateTicket(ticketID, input)
+	return s.repo.UpdateTicket(userID, ticketID, input)
 }
