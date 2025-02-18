@@ -9,7 +9,10 @@ type Ticket interface {
 	GetUserTickets(userID int) ([]Request_Manager.Ticket, error)
 	CreateTicket(userID int, ticket Request_Manager.Ticket) (int, error)
 	UpdateTicket(userID int, ticketID int, input Request_Manager.UpdateTicketInput) error
-	DeleteTicket(ticketID int) error
+	DeleteUserTicket(ticketID, userID int) error
+	DeleteTicketAdmin(ticketID int) error
+	GetAllTickets() ([]Request_Manager.Ticket, error)
+	GetTicketByID(ticketID int) (Request_Manager.Ticket, error)
 }
 type Notification interface {
 	GetAllUserNotification(userID int) ([]Request_Manager.Notification, error)

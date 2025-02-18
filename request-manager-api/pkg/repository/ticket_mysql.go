@@ -19,14 +19,21 @@ func NewTicketMysql(db *sqlx.DB, notification Notification) *TicketMysql {
 
 func (r *TicketMysql) GetUserTickets(userID int) ([]Request_Manager.Ticket, error) {
 	var tickets []Request_Manager.Ticket
-	query := `
-		SELECT t.TicketID, t.Title, t.Description, ts.Status, t.CreatedAt, t.UpdatedAt, 
-		       t.AssignedTo, t.UserID, u.Username AS SenderUsername, a.Username AS AssigneeUsername
-		FROM Ticket t
-		JOIN TicketStatus ts ON t.StatusID = ts.StatusID
-		JOIN User u ON t.UserID = u.UserID
-		LEFT JOIN User a ON t.AssignedTo = a.UserID
-		WHERE t.UserID = ?`
+	query := `SELECT 
+        t.TicketID, 
+        t.Title, 
+        t.Description, 
+        ts.Status, 
+        t.CreatedAt, 
+        t.UpdatedAt, 
+        t.AssignedTo, 
+        sender.Username AS SenderUsername, 
+        assignee.Username AS AssigneeUsername
+    FROM Ticket t
+    JOIN TicketStatus ts ON t.StatusID = ts.StatusID
+    JOIN User sender ON t.UserID = sender.UserID
+    LEFT JOIN User assignee ON t.AssignedTo = assignee.UserID
+    WHERE t.UserID = ?`
 
 	err := r.db.Select(&tickets, query, userID)
 	if err != nil {
@@ -84,7 +91,6 @@ func (r *TicketMysql) CreateTicket(userID int, ticket Request_Manager.Ticket) (i
 		Message:   notificationMessage,
 		UserID:    userID,
 		CreatedAt: time.Now().UTC().Add(2 * time.Hour).Format("2006-01-02 15:04:05"),
-		UpdatedAt: time.Now().UTC().Add(2 * time.Hour).Format("2006-01-02 15:04:05"),
 	}
 
 	_, err = r.notification.Create(notification)
@@ -136,7 +142,6 @@ func (r *TicketMysql) UpdateTicket(userID int, ticketID int, input Request_Manag
 		Message:   notificationMessage,
 		UserID:    userID,
 		CreatedAt: time.Now().UTC().Add(2 * time.Hour).Format("2006-01-02 15:04:05"),
-		UpdatedAt: time.Now().UTC().Add(2 * time.Hour).Format("2006-01-02 15:04:05"),
 	}
 
 	_, err = r.notification.Create(notification)
@@ -160,8 +165,58 @@ func (r *TicketMysql) GetByID(ticketID int) (Request_Manager.Ticket, error) {
 	return ticket, nil
 }
 
-func (r *TicketMysql) DeleteTicket(ticketID int) error {
+func (r *TicketMysql) DeleteUserTicket(ticketID, userID int) error {
+	query := `DELETE FROM Ticket WHERE TicketID=? AND UserID=?`
+	result, err := r.db.Exec(query, ticketID, userID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("ticket not found or does not belong to user")
+	}
+
+	return nil
+}
+
+func (r *TicketMysql) DeleteTicketAdmin(ticketID int) error {
 	query := `DELETE FROM Ticket WHERE TicketID=?`
 	_, err := r.db.Exec(query, ticketID)
 	return err
+}
+func (r *TicketMysql) GetAllTickets() ([]Request_Manager.Ticket, error) {
+	var tickets []Request_Manager.Ticket
+	query := `
+		SELECT t.TicketID, t.Title, t.Description, ts.Status, t.CreatedAt, t.UpdatedAt,
+		       t.AssignedTo, t.UserID, u.Username AS SenderUsername, a.Username AS AssigneeUsername
+		FROM Ticket t
+		JOIN TicketStatus ts ON t.StatusID = ts.StatusID
+		JOIN User u ON t.UserID = u.UserID
+		LEFT JOIN User a ON t.AssignedTo = a.UserID`
+
+	err := r.db.Select(&tickets, query)
+	if err != nil {
+		return nil, err
+	}
+	return tickets, nil
+}
+
+func (r *TicketMysql) GetTicketByID(ticketID int) (Request_Manager.Ticket, error) {
+	var ticket Request_Manager.Ticket
+	query := `
+		SELECT t.TicketID, t.Title, t.Description, ts.Status, t.CreatedAt, t.UpdatedAt,
+		       t.AssignedTo, t.UserID, u.Username AS SenderUsername, a.Username AS AssigneeUsername
+		FROM Ticket t
+		JOIN TicketStatus ts ON t.StatusID = ts.StatusID
+		JOIN User u ON t.UserID = u.UserID
+		LEFT JOIN User a ON t.AssignedTo = a.UserID
+		WHERE TicketID=?`
+
+	err := r.db.Get(&ticket, query, ticketID)
+	return ticket, err
 }

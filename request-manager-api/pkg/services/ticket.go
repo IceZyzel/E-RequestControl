@@ -21,8 +21,8 @@ func (s *TicketService) GetUserTickets(ticketID int) ([]Request_Manager.Ticket, 
 	return s.repo.GetUserTickets(ticketID)
 }
 
-func (s *TicketService) DeleteTicket(ticketID int) error {
-	return s.repo.DeleteTicket(ticketID)
+func (s *TicketService) DeleteUserTicket(ticketID, userID int) error {
+	return s.repo.DeleteUserTicket(ticketID, userID)
 }
 func (s *TicketService) UpdateTicket(userID int, ticketID int, input Request_Manager.UpdateTicketInput) error {
 	if err := input.Validate(); err != nil {
@@ -30,4 +30,14 @@ func (s *TicketService) UpdateTicket(userID int, ticketID int, input Request_Man
 	}
 
 	return s.repo.UpdateTicket(userID, ticketID, input)
+}
+
+func (s *TicketService) DeleteTicketAdmin(ticketID int) error {
+	return s.repo.DeleteTicketAdmin(ticketID)
+}
+func (s *TicketService) GetAllTickets() ([]Request_Manager.Ticket, error) {
+	return s.repo.GetAllTickets()
+}
+func (s *TicketService) GetTicketByID(ticketID int) (Request_Manager.Ticket, error) {
+	return s.repo.GetTicketByID(ticketID)
 }

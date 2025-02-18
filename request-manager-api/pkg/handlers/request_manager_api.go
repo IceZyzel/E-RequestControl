@@ -9,30 +9,52 @@ import (
 )
 
 func (h *Handlers) getAllTickets(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "getAllTickets endpoint"})
+	tickets, err := h.service.Ticket.GetAllTickets()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, tickets)
 }
 
 func (h *Handlers) getTicketByID(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "getTicketByID endpoint"})
+	ticketID, err := strconv.Atoi(c.Param("ticketID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid ticket ID"})
+		return
+	}
+	company, err := h.service.Ticket.GetTicketByID(ticketID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, company)
 }
 func (h *Handlers) adminDeleteTicket(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "getTicketByID endpoint"})
+	ticketID, err := strconv.Atoi(c.Param("ticketID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid ticket ID"})
+		return
+	}
+	if err := h.service.Ticket.DeleteTicketAdmin(ticketID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Ticket deleted"})
 }
-func (h *Handlers) adminUpdateTicket(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "getTicketByID endpoint"})
-}
+
 func (h *Handlers) getUserTickets(c *gin.Context) {
 	userID, err := getUserID(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid user ID"})
 		return
 	}
-	testResults, err := h.service.Ticket.GetUserTickets(userID)
+	tickets, err := h.service.Ticket.GetUserTickets(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, testResults)
+	c.JSON(http.StatusOK, tickets)
 }
 func (h *Handlers) createTicket(c *gin.Context) {
 	userID, err := getUserID(c)
@@ -90,15 +112,23 @@ func (h *Handlers) updateTicket(c *gin.Context) {
 }
 
 func (h *Handlers) deleteTicket(c *gin.Context) {
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+		return
+	}
+
 	ticketID, err := strconv.Atoi(c.Param("ticketID"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid ticket ID"})
 		return
 	}
-	if err := h.service.Ticket.DeleteTicket(ticketID); err != nil {
+
+	if err := h.service.Ticket.DeleteUserTicket(ticketID, userID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Ticket deleted"})
 }
 func (h *Handlers) getUserNotifications(c *gin.Context) {
@@ -118,28 +148,6 @@ func (h *Handlers) getUserNotifications(c *gin.Context) {
 }
 func (h *Handlers) markNotificationAsRead(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "deleteTicket endpoint"})
-}
-func (h *Handlers) getTicketStatuses(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "getTicketStatuses endpoint"})
-}
-func (h *Handlers) getAllStatuses(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "updateStatus endpoint"})
-}
-
-func (h *Handlers) getStatusByID(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "updateStatus endpoint"})
-}
-
-func (h *Handlers) createStatus(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "updateStatus endpoint"})
-}
-
-func (h *Handlers) updateStatus(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "updateStatus endpoint"})
-}
-
-func (h *Handlers) deleteStatus(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "updateStatus endpoint"})
 }
 
 func (h *Handlers) getAllUsers(c *gin.Context) {

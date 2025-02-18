@@ -15,9 +15,8 @@ func NewNotificationMysql(db *sqlx.DB) *NotificationMysql {
 }
 func (r *NotificationMysql) Create(notification Request_Manager.Notification) (int, error) {
 	createdAt := time.Now().UTC().Add(2 * time.Hour).Format("2006-01-02 15:04:05")
-	updatedAt := time.Now().UTC().Add(2 * time.Hour).Format("2006-01-02 15:04:05")
-	query := "INSERT INTO Notification (Message, UserID, CreatedAt, UpdatedAt) VALUES (?, ?, ?, ?)"
-	result, err := r.db.Exec(query, notification.Message, notification.UserID, createdAt, updatedAt)
+	query := "INSERT INTO Notification (Message, UserID, CreatedAt) VALUES (?, ?, ?)"
+	result, err := r.db.Exec(query, notification.Message, notification.UserID, createdAt)
 	if err != nil {
 		return 0, err
 	}

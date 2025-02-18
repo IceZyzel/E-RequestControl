@@ -1,8 +1,8 @@
-CREATE TABLE Role (
-                      RoleID INT AUTO_INCREMENT PRIMARY KEY,
-                      RoleName VARCHAR(50) NOT NULL UNIQUE,
-                      CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                      UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS Role (
+                                    RoleID INT AUTO_INCREMENT PRIMARY KEY,
+                                    RoleName VARCHAR(50) NOT NULL UNIQUE,
+                                    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                    UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE User (
@@ -44,6 +44,5 @@ CREATE TABLE Notification (
                               Message TEXT NOT NULL,
                               UserID INT NOT NULL,
                               CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                              UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                               FOREIGN KEY (UserID) REFERENCES User(UserID) ON DELETE CASCADE
 );

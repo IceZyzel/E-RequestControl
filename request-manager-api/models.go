@@ -46,7 +46,6 @@ type Notification struct {
 	Message        string `json:"Message" db:"Message"`
 	UserID         int    `json:"UserID" db:"UserID"`
 	CreatedAt      string `json:"CreatedAt" db:"CreatedAt"`
-	UpdatedAt      string `json:"UpdatedAt" db:"UpdatedAt"`
 }
 
 func (i UpdateTicketInput) Validate() error {

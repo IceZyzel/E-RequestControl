@@ -45,7 +45,6 @@ func (h *Handlers) InitRoutes() *gin.Engine {
 		{
 			adminTickets.GET("/", h.getAllTickets)
 			adminTickets.GET("/:ticketID", h.getTicketByID)
-			adminTickets.PUT("/:ticketID", h.adminUpdateTicket)
 			adminTickets.DELETE("/:ticketID", h.adminDeleteTicket)
 		}
 		adminNotifications := admin.Group("/notifications")
