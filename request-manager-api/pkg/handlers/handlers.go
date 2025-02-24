@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
+	"net/http"
 	"request_manager_api/pkg/services"
 )
 
@@ -13,8 +14,49 @@ func NewHandler(services *services.Service) *Handlers {
 	return &Handlers{service: services}
 }
 
+func CORSMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		allowedOrigins := []string{
+			"http://localhost:5173",
+			"http://localhost:3000",
+		}
+
+		origin := c.GetHeader("Origin")
+		if contains(allowedOrigins, origin) {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+		} else {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173") // Default fallback
+		}
+
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+
+		c.Writer.Header().Set("Access-Control-Expose-Headers", "Authorization")
+
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusOK)
+			return
+		}
+
+		c.Next()
+	}
+}
+
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
 func (h *Handlers) InitRoutes() *gin.Engine {
 	router := gin.Default()
+	router.Use(CORSMiddleware())
 
 	auth := router.Group("/auth")
 	{

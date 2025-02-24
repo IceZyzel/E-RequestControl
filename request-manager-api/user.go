@@ -6,27 +6,27 @@ import (
 )
 
 type User struct {
-	UserID    int    `json:"UserID" db:"UserID"`
-	Username  string `json:"Username" db:"Username"`
-	Password  string `json:"Password" db:"Password"`
-	FirstName string `json:"FirstName" db:"FirstName"`
-	LastName  string `json:"LastName" db:"LastName"`
-	Email     string `json:"Email" db:"Email"`
-	RoleID    int    `json:"RoleID" db:"RoleID"`
-	CreatedAt string `json:"CreatedAt" db:"CreatedAt"`
-	UpdatedAt string `json:"UpdatedAt" db:"UpdatedAt"`
+	UserID    int    `json:"user_id" db:"UserID"`
+	Username  string `json:"username" db:"Username"`
+	Password  string `json:"password" db:"Password"`
+	FirstName string `json:"firstname" db:"FirstName"`
+	LastName  string `json:"lastname" db:"LastName"`
+	Email     string `json:"email" db:"Email"`
+	RoleID    int    `json:"role_id" db:"RoleID"`
+	CreatedAt string `json:"created_at" db:"CreatedAt"`
+	UpdatedAt string `json:"updated_at" db:"UpdatedAt"`
 }
 
 type UpdateUserInput struct {
-	UserID    *int    `json:"UserID"`
-	Username  *string `json:"Username"`
-	Password  *string `json:"Password"`
-	FirstName *string `json:"FirstName"`
-	LastName  *string `json:"LastName"`
-	Email     *string `json:"Email"`
-	RoleID    *int    `json:"RoleID"`
-	CreatedAt *string `json:"CreatedAt"`
-	UpdatedAt *string `json:"UpdatedAt"`
+	UserID    *int    `json:"user_id"`
+	Username  *string `json:"username"`
+	Password  *string `json:"password"`
+	FirstName *string `json:"first_name"`
+	LastName  *string `json:"last_name"`
+	Email     *string `json:"email"`
+	RoleID    *int    `json:"role_id"`
+	CreatedAt *string `json:"created_at"`
+	UpdatedAt *string `json:"updated_at"`
 }
 
 func (i UpdateUserInput) Validate() error {
