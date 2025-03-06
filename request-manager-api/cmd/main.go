@@ -1,14 +1,17 @@
 package main
 
 import (
+	"context"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"os"
+	"os/signal"
 	"request_manager_api"
 	"request_manager_api/pkg/handlers"
 	"request_manager_api/pkg/repository"
 	"request_manager_api/pkg/services"
+	"syscall"
 )
 
 func main() {
@@ -34,8 +37,26 @@ func main() {
 	handlers := handlers.NewHandler(services)
 
 	srv := new(request_manager_api.Server)
-	if err := srv.Run(viper.GetString("port"), handlers.InitRoutes()); err != nil {
-		logrus.Fatalf("error running server: %s", err.Error())
+
+	go func() {
+		if err := srv.Run(viper.GetString("port"), handlers.InitRoutes()); err != nil {
+			logrus.Fatalf("error running server: %s", err.Error())
+		}
+	}()
+	logrus.Printf("E-RequestControl started")
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+	<-quit
+
+	logrus.Printf("E-RequestControl shutting down")
+
+	if err := srv.Shutdown(context.Background()); err != nil {
+		logrus.Errorf("error occured on server shutting down: %s", err.Error())
+	}
+
+	if err := db.Close(); err != nil {
+		logrus.Errorf("error occured on db connection close: %s", err.Error())
 	}
 }
 
