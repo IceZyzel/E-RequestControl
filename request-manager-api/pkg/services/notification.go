@@ -24,3 +24,6 @@ func (s *NotificationService) GetAll() ([]Request_Manager.Notification, error) {
 func (s *NotificationService) Delete(notificationID int) error {
 	return s.repo.Delete(notificationID)
 }
+func (s *NotificationService) MarkNotificationAsRead(notificationID, userID int) error {
+	return s.repo.MarkNotificationAsRead(notificationID, userID)
+}

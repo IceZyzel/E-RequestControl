@@ -67,6 +67,7 @@ func (h *Handlers) InitRoutes() *gin.Engine {
 
 	api := router.Group("/api", h.userIdentity)
 	{
+		api.GET("/users", h.getAllUsers)
 		tickets := api.Group("/tickets")
 		{
 			tickets.GET("/", h.getUserTickets)
@@ -77,7 +78,7 @@ func (h *Handlers) InitRoutes() *gin.Engine {
 		notifications := api.Group("/notifications")
 		{
 			notifications.GET("/", h.getUserNotifications)
-			notifications.PUT("/:notificationID", h.markNotificationAsRead)
+			notifications.DELETE("/:notificationID", h.markNotificationAsRead)
 		}
 	}
 

@@ -19,6 +19,7 @@ type Notification interface {
 	Create(notification Request_Manager.Notification) (int, error) //эта функция
 	Delete(notificationID int) error
 	GetAll() ([]Request_Manager.Notification, error)
+	MarkNotificationAsRead(notificationID, userID int) error
 }
 type Authorization interface {
 	CreateAdmin(user Request_Manager.User) (int, error)

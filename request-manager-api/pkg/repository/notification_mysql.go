@@ -45,3 +45,8 @@ func (r *NotificationMysql) Delete(notificationID int) error {
 	_, err := r.db.Exec(query, notificationID)
 	return err
 }
+func (r *NotificationMysql) MarkNotificationAsRead(notificationID, userID int) error {
+	query := "DELETE FROM Notification WHERE NotificationID = ? AND UserID=?"
+	_, err := r.db.Exec(query, notificationID, userID)
+	return err
+}

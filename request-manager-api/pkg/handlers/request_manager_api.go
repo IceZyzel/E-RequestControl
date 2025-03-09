@@ -95,7 +95,7 @@ func (h *Handlers) updateTicket(c *gin.Context) {
 	}
 
 	var input Request_Manager.UpdateTicketInput
-	if err := c.ShouldBindJSON(&input); err != nil { // Используем только один раз
+	if err := c.ShouldBindJSON(&input); err != nil {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -147,7 +147,25 @@ func (h *Handlers) getUserNotifications(c *gin.Context) {
 	c.JSON(http.StatusOK, notifications)
 }
 func (h *Handlers) markNotificationAsRead(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "deleteTicket endpoint"})
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid user ID"})
+		return
+	}
+
+	notificationID, err := strconv.Atoi(c.Param("notificationID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+
+	err = h.service.Notification.MarkNotificationAsRead(notificationID, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to mark notification as read"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Notification marked as read"})
 }
 
 func (h *Handlers) getAllUsers(c *gin.Context) {
