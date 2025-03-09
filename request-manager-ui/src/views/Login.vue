@@ -47,7 +47,9 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { authApi } from '../api';
+import { authApi, requestApi, notificationApi } from '../api';
+import { useAuthStore } from '../store/auth';
+
 
 const username = ref('');
 const password = ref('');
@@ -61,13 +63,31 @@ const togglePasswordVisibility = () => {
 const handleSubmit = async () => {
   try {
     const response = await authApi.login(username.value, password.value);
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('role', response.data.role);
-    router.push('/dashboard');
+
+    if (response.status === 200) {
+      const authStore = useAuthStore();
+
+      authStore.login({
+        username: username.value,
+        password: password.value,
+      });
+
+      const role = localStorage.getItem('role');
+      if (role === 'admin') {
+        router.push('/admin-dashboard');
+      } else {
+        router.push('/dashboard');
+      }
+    } else {
+      alert('Не вдалося увійти, код статусу: ' + response.status);
+    }
   } catch (error) {
-    alert('Увійти не вдалося');
+    console.error('Ошибка при авторизации:', error);
+    alert('Не вдалося увійти, ошибка: ' + (error.response ? error.response.data.message : error.message));
   }
 };
+
+
 </script>
 
 <style scoped>

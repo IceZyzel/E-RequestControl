@@ -129,7 +129,7 @@ html, body {
   align-items: center;
   height: 100%;
   background-color: #f4f7fc;
-  overflow: auto; /* Ensure scrollability */
+  overflow: auto;
 }
 
 .login-form {
