@@ -2,9 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/joho/godotenv"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"os"
 	"os/signal"
 	"request_manager_api"
@@ -12,6 +9,10 @@ import (
 	"request_manager_api/pkg/repository"
 	"request_manager_api/pkg/services"
 	"syscall"
+
+	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 func main() {
@@ -23,11 +24,11 @@ func main() {
 		logrus.Fatalf("Error loading env variables: %s", err.Error())
 	}
 	db, err := repository.NewMysqlDb(repository.Config{
-		Host:     viper.GetString("db.host"),
-		Port:     viper.GetString("db.port"),
-		Username: viper.GetString("db.username"),
-		Password: os.Getenv("DB_PASSWORD"),
-		Dbname:   viper.GetString("db.dbname"),
+		Host:     ("req-db"),
+		Port:     ("3306"),
+		Username: ("root"),
+		Password: ("123123"),
+		Dbname:   ("mysql"),
 	})
 	if err != nil {
 		logrus.Fatalf("Failed to initialize db %s", err.Error())

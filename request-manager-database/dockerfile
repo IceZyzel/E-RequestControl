@@ -1,0 +1,8 @@
+FROM mysql:8.0
+LABEL "Project"="request-manager"
+LABEL "Author"="Illia Kuchuk"
+
+ENV MYSQL_ROOT_PASSWORD="123123"
+ENV MYSQL_DATABASE="mysql"
+
+ADD 000001_init.up.sql docker-entrypoint-initdb.d/
