@@ -1,8 +1,8 @@
-FROM mysql:8.0
+FROM mysql:8.0.41
 LABEL "Project"="request-manager"
 LABEL "Author"="Illia Kuchuk"
 
 ENV MYSQL_ROOT_PASSWORD="123123"
-ENV MYSQL_DATABASE="mysql"
+ENV MYSQL_DATABASE="request_manager"
 
-ADD 000001_init.up.sql docker-entrypoint-initdb.d/
+COPY db_backup.sql /docker-entrypoint-initdb.d/

@@ -1,9 +1,16 @@
+CREATE DATABASE IF NOT EXISTS `request_manager`;
+
+use `request_manager`;
+
+
 CREATE TABLE IF NOT EXISTS Role (
                                     RoleID INT AUTO_INCREMENT PRIMARY KEY,
                                     RoleName VARCHAR(50) NOT NULL UNIQUE,
                                     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                     UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+INSERT INTO Role (RoleID, RoleName) VALUES (1, 'Admin');
+INSERT INTO Role (RoleID, RoleName) VALUES (2, 'User');
 
 CREATE TABLE User (
                       UserID INT AUTO_INCREMENT PRIMARY KEY,

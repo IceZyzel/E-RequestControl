@@ -14,7 +14,7 @@ services:
       - DB_PORT=3306 # Используем правильный внутренний порт
       - DB_USER=root
       - DB_PASSWORD=123123
-      - DB_NAME=mysql
+      - DB_NAME=request_manager
     networks:
       - my-network
 
@@ -24,7 +24,7 @@ services:
     restart: always
     environment:
       - MYSQL_ROOT_PASSWORD=123123
-      - MYSQL_DATABASE=mysql
+      - MYSQL_DATABASE=request_manager
     ports:
       - "3308:3306" # Внешний порт 3308 для доступа из-за пределов Docker
     volumes:

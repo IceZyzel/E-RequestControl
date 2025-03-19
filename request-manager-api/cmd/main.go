@@ -28,7 +28,7 @@ func main() {
 		Port:     ("3306"),
 		Username: ("root"),
 		Password: ("123123"),
-		Dbname:   ("mysql"),
+		Dbname:   ("request_manager"),
 	})
 	if err != nil {
 		logrus.Fatalf("Failed to initialize db %s", err.Error())
