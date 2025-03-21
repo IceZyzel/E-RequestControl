@@ -1,4 +1,4 @@
-FROM mysql:8.0.41
+FROM mysql:8.0.41-oraclelinux9
 LABEL "Project"="request-manager"
 LABEL "Author"="Illia Kuchuk"
 

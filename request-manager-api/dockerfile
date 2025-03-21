@@ -14,7 +14,9 @@ RUN go build -o /main ./cmd/main.go
 # Этап минимального контейнера
 FROM alpine:latest
 
+
 WORKDIR /root/
+RUN apk add --no-cache ca-certificates tzdata
 
 COPY --from=builder /main .
 COPY --from=builder /usr/src/app/.env .env
