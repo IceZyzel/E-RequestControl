@@ -86,6 +86,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { requestApi, notificationApi } from '../api';
 import { useAuthStore } from '../store/auth';
+import { computed } from 'vue';
 
 export default {
   name: 'Dashboard',
@@ -101,7 +102,12 @@ export default {
     });
     const editTicketData = ref(null);
 
-    const loggedInUser = authStore.user;
+    console.log('authStore:', authStore);
+    console.log('authStore.user:', authStore.user);
+    console.log('authStore.role:', authStore.role);
+
+    const loggedInUser = computed(() => authStore.user);
+
 
     const fetchUsers = async () => {
       try {
@@ -176,6 +182,7 @@ export default {
 
     watch(() => loggedInUser, fetchUsers);
     onMounted(() => {
+        console.log('Dashboard mounted. AuthStore:', authStore);
       fetchTickets();
       fetchNotifications();
       fetchUsers();

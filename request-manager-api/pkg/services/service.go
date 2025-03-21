@@ -25,7 +25,7 @@ type Authorization interface {
 	CreateAdmin(user Request_Manager.User) (int, error)
 	CreateUser(user Request_Manager.User) (int, error)
 	GenerateToken(username, password string) (string, error)
-	ParseToken(token string) (int, error)
+	ParseToken(token string) (int, int, error)
 }
 type Admin interface {
 	GetUserByID(userID int) (Request_Manager.User, error)

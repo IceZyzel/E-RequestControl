@@ -56,7 +56,7 @@ func (r *AuthMysql) CreateAdmin(user Request_Manager.User) (int, error) {
 
 func (r *AuthMysql) GetUser(username, password string) (Request_Manager.User, error) {
 	var user Request_Manager.User
-	query := "SELECT UserID FROM User WHERE Username=? AND PASSWORD=?"
+	query := "SELECT UserID, RoleID FROM User WHERE Username=? AND PASSWORD=?"
 	err := r.db.Get(&user, query, username, password)
 	return user, err
 }

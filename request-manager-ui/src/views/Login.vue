@@ -47,14 +47,13 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { authApi, requestApi, notificationApi } from '../api';
 import { useAuthStore } from '../store/auth';
-
 
 const username = ref('');
 const password = ref('');
 const isPasswordVisible = ref(false);
 const router = useRouter();
+const authStore = useAuthStore();
 
 const togglePasswordVisibility = () => {
   isPasswordVisible.value = !isPasswordVisible.value;
@@ -62,33 +61,27 @@ const togglePasswordVisibility = () => {
 
 const handleSubmit = async () => {
   try {
-    const response = await authApi.login(username.value, password.value);
+    const success = await authStore.login({
+      username: username.value,
+      password: password.value,
+    });
 
-    if (response.status === 200) {
-      const authStore = useAuthStore();
+    if (!success) return;
 
-      authStore.login({
-        username: username.value,
-        password: password.value,
-      });
+    console.log("Успішна авторизація. Роль:", authStore.role);
 
-      const role = localStorage.getItem('role');
-      if (role === 'admin') {
-        router.push('/admin-dashboard');
-      } else {
-        router.push('/dashboard');
-      }
+    if (authStore.role === 1) {
+      router.push('/admin-dashboard');
     } else {
-      alert('Не вдалося увійти, код статусу: ' + response.status);
+      router.push('/dashboard');
     }
   } catch (error) {
-    console.error('Ошибка при авторизации:', error);
-    alert('Не вдалося увійти, ошибка: ' + (error.response ? error.response.data.message : error.message));
+    console.error('Помилка при авторизації:', error);
+    alert('Не вдалося увійти: ' + (error.response?.data?.message || error.message));
   }
 };
-
-
 </script>
+
 
 <style scoped>
 .login-container {

@@ -20,14 +20,14 @@ func (h *Handlers) userIdentity(c *gin.Context) {
 		return
 	}
 
-	headerParts := strings.Split(header, " ")
-	if len(headerParts) != 2 {
+	headerParts := strings.Fields(header)
+	if len(headerParts) < 2 {
 		newErrorResponse(c, http.StatusUnauthorized, "invalid auth header")
 		c.Abort()
 		return
 	}
 
-	userID, err := h.service.Authorization.ParseToken(headerParts[1])
+	userID, roleID, err := h.service.Authorization.ParseToken(headerParts[1])
 	if err != nil {
 		newErrorResponse(c, http.StatusUnauthorized, err.Error())
 		c.Abort()
@@ -35,6 +35,7 @@ func (h *Handlers) userIdentity(c *gin.Context) {
 	}
 
 	c.Set(userCtx, userID)
+	c.Set("RoleID", int(roleID))
 	c.Next()
 }
 
@@ -53,21 +54,21 @@ func getUserID(c *gin.Context) (int, error) {
 }
 
 func (h *Handlers) adminRequired(c *gin.Context) {
-	userID, err := getUserID(c)
-	if err != nil {
-		newErrorResponse(c, http.StatusUnauthorized, "User not authenticated")
+	roleIDValue, exists := c.Get("RoleID")
+	if !exists {
+		newErrorResponse(c, http.StatusUnauthorized, "User role not found")
 		c.Abort()
 		return
 	}
 
-	user, err := h.service.Admin.GetUserByID(userID)
-	if err != nil {
-		newErrorResponse(c, http.StatusUnauthorized, "User not found")
+	roleID, ok := roleIDValue.(int)
+	if !ok {
+		newErrorResponse(c, http.StatusUnauthorized, "Invalid role type")
 		c.Abort()
 		return
 	}
 
-	if user.RoleID != 1 {
+	if roleID != 1 {
 		newErrorResponse(c, http.StatusForbidden, "Admin role required")
 		c.Abort()
 		return

@@ -1,34 +1,48 @@
 import { defineStore } from 'pinia';
-import axios from 'axios';
-
+import { authApi } from '../api';
+import { jwtDecode } from 'jwt-decode';
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
         user: null,
-        token: localStorage.getItem('token') || ''
+        token: localStorage.getItem('token') || '',
+        role: localStorage.getItem('role') || null,
     }),
     actions: {
         async login(credentials) {
             try {
-                const res = await axios.post('/auth/login', credentials);
+                const res = await authApi.login(credentials.username, credentials.password);
+
                 this.user = res.data.user;
                 this.token = res.data.token;
-                localStorage.setItem('token', res.data.token);
-                localStorage.setItem('role', res.data.user.role);
-                axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
+
+                const decodedToken = jwtDecode(this.token);
+                this.role = decodedToken.RoleID;
+
+                localStorage.setItem('token', this.token);
+                localStorage.setItem('role', this.role);
+
+                return true;
             } catch (error) {
-                alert('Помилка авторизації!');
+                console.error("Помилка авторизації:", error);
+                alert('Невірний логін або пароль!');
+                return false;
             }
         },
         logout() {
             this.user = null;
             this.token = '';
+            this.role = null;
             localStorage.removeItem('token');
             localStorage.removeItem('role');
-            delete axios.defaults.headers.common['Authorization'];
         },
-        setUser(user) {
-            this.user = user;
+        setRole(role) {
+            this.role = role;
+            localStorage.setItem('role', role);
         }
+    },
+    getters: {
+        isAuthenticated: (state) => !!state.token,
+        userRole: (state) => state.role,
     }
 });
