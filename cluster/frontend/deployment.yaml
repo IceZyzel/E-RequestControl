@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: req-front
+spec:
+  selector:
+    matchLabels:
+      app: req-front # <- Этот лейбл должен совпадать с Service!
+  template:
+    metadata:
+      labels:
+        app: req-front # <- И здесь тоже
+    spec:
+      containers:
+        - name: req-front
+          image: zyzelq/req-front:v1
+          ports:
+            - containerPort: 5173
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 2Gi

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: req-db
+spec:
+  selector:
+    matchLabels:
+      app: req-db
+  template:
+    metadata:
+      labels:
+        app: req-db
+    spec:
+      containers:
+        - name: req-db
+          image: zyzelq/req-db:v2
+          ports:
+            - containerPort: 3306 # Исправлено с 3308 на 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "123123"
+            - name: MYSQL_DATABASE
+              value: "request_manager"
+          volumeMounts:
+            - name: req-db-storage
+              mountPath: /var/lib/mysql
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+      volumes:
+        - name: req-db-storage
+          persistentVolumeClaim:
+            claimName: req-db-pvc
