@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <div class="login-form">
-      <h2>Вхід в систему</h2>
+      <h1>Вхід в систему</h1>
       <form @submit.prevent="handleSubmit">
         <div class="input-group">
           <label for="username">Логін</label>
@@ -11,6 +11,7 @@
               id="username"
               placeholder="Введіть ваш логін"
               required
+              class="form-input"
           />
         </div>
 
@@ -23,21 +24,31 @@
                 id="password"
                 placeholder="Введіть ваш пароль"
                 required
+                class="form-input"
             />
-            <button type="button" @click="togglePasswordVisibility" class="eye-button">
-              👁️
+            <button
+                type="button"
+                @click="togglePasswordVisibility"
+                class="eye-button"
+                :class="{ 'active': isPasswordVisible }"
+            >
+              <i class="fas" :class="isPasswordVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
             </button>
           </div>
         </div>
 
         <div class="actions">
-          <button type="submit" class="btn-submit">Увійти</button>
-          <p class="forgot-password">
-            <router-link to="/register">Зареєструватися</router-link>
-          </p>
-          <p class="admin-registration">
-            <router-link to="/registerAdmin">Зареєструватися як адміністратор</router-link>
-          </p>
+          <button type="submit" class="btn-submit">
+            <i class="fas fa-sign-in-alt"></i> Увійти
+          </button>
+          <div class="links">
+            <router-link to="/register" class="link">
+              <i class="fas fa-user-plus"></i> Зареєструватися
+            </router-link>
+            <router-link to="/registerAdmin" class="link admin">
+              <i class="fas fa-user-shield"></i> Зареєструватися як адміністратор
+            </router-link>
+          </div>
         </div>
       </form>
     </div>
@@ -68,8 +79,6 @@ const handleSubmit = async () => {
 
     if (!success) return;
 
-    console.log("Успішна авторизація. Роль:", authStore.role);
-
     if (authStore.role === 1) {
       router.push('/admin-dashboard');
     } else {
@@ -82,48 +91,58 @@ const handleSubmit = async () => {
 };
 </script>
 
-
 <style scoped>
 .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background-color: #f4f7fc;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  padding: 20px;
 }
 
 .login-form {
-  background-color: #fff;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  width: 400px;
-  max-width: 100%;
+  background-color: var(--white);
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 450px;
 }
 
-h2 {
+h1 {
   text-align: center;
-  margin-bottom: 1.5rem;
-  color: #333;
+  margin-bottom: 2rem;
+  color: var(--primary-color);
+  font-size: 1.8rem;
+  font-weight: 600;
 }
 
 .input-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .input-group label {
   display: block;
+  margin-bottom: 0.75rem;
   font-weight: 500;
-  margin-bottom: 0.5rem;
+  color: var(--dark-color);
+  font-size: 0.95rem;
 }
 
-.input-group input {
+.form-input {
   width: 100%;
-  padding: 0.8rem;
+  padding: 0.9rem 1rem;
   font-size: 1rem;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  box-sizing: border-box;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
 }
 
 .password-wrapper {
@@ -133,59 +152,93 @@ h2 {
 .eye-button {
   position: absolute;
   top: 50%;
-  right: 10px;
+  right: 12px;
   transform: translateY(-50%);
   background: none;
   border: none;
-  font-size: 1.2rem;
+  color: var(--gray-color);
+  font-size: 1rem;
   cursor: pointer;
+  padding: 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.eye-button:hover,
+.eye-button.active {
+  color: var(--primary-color);
 }
 
 .actions {
-  text-align: center;
+  margin-top: 2rem;
 }
 
 .btn-submit {
-  background-color: #007bff;
-  color: white;
-  padding: 0.8rem 1.5rem;
+  background-color: var(--primary-color);
+  color: var(--white);
+  padding: 1rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  font-weight: 500;
   width: 100%;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .btn-submit:hover {
-  background-color: #0056b3;
+  background-color: var(--secondary-color);
 }
 
-.forgot-password {
-  margin-top: 1rem;
+.btn-submit i {
   font-size: 0.9rem;
 }
 
-.forgot-password a {
-  color: #007bff;
+.links {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.link {
+  color: var(--primary-color);
   text-decoration: none;
-}
-
-.forgot-password a:hover {
-  text-decoration: underline;
-}
-
-.admin-registration {
-  margin-top: 1rem;
   font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.2s ease;
 }
 
-.admin-registration a {
-  color: #007bff;
-  text-decoration: none;
-}
-
-.admin-registration a:hover {
+.link:hover {
+  color: var(--secondary-color);
   text-decoration: underline;
+}
+
+.link i {
+  font-size: 0.8rem;
+}
+
+.link.admin {
+  color: var(--danger-color);
+}
+
+.link.admin:hover {
+  color: #e5177e;
+}
+
+@media (max-width: 480px) {
+  .login-form {
+    padding: 1.5rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
 }
 </style>

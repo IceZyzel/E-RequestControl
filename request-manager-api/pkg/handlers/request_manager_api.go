@@ -326,7 +326,7 @@ func (h *Handlers) exportData(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to export data"})
 		return
 	}
-
+	c.File(exportPath)
 	c.JSON(http.StatusOK, gin.H{"message": "Data export successful"})
 }
 func (h *Handlers) importData(c *gin.Context) {

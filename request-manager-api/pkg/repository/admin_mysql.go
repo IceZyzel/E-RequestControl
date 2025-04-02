@@ -63,11 +63,12 @@ func (r *AdminMysql) CreateUser(user Request_Manager.User) (int, error) {
 	}
 
 	createdAt := time.Now().UTC().Add(2 * time.Hour).Format("2006-01-02 15:04:05")
+	updatedAt := createdAt
 
-	query := fmt.Sprintf(`INSERT INTO User (Username, Email, Password, RoleID, FirstName, LastName, CreatedAt, UpdatedAt) 
+	query := fmt.Sprintf(`INSERT INTO User (Username, Email, Password, RoleID, FirstName, LastName, CreatedAt, UpdatedAt)
 	          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
 
-	result, err := r.db.Exec(query, user.Username, user.Email, user.Password, user.RoleID, user.FirstName, user.LastName, createdAt, createdAt)
+	result, err := r.db.Exec(query, user.Username, user.Email, user.Password, user.RoleID, user.FirstName, user.LastName, createdAt, updatedAt)
 
 	if err != nil {
 		mysqlErr, ok := err.(*mysql.MySQLError)
@@ -133,10 +134,10 @@ func (r *AdminMysql) UpdateUser(UserID int, input Request_Manager.UpdateUserInpu
 		existingUser.LastName = *input.LastName
 	}
 
-	query := `UPDATE User 
-	          SET Username=?, Email=?, Password=?, RoleID=?, FirstName=?, LastName=?, UpdatedAt=? 
+	query := `UPDATE User
+	          SET Username=?, Email=?, Password=?, RoleID=?, FirstName=?, LastName=?, UpdatedAt=?
 	          WHERE UserID=?`
-	_, err = r.db.Exec(query, existingUser.Username, existingUser.Email, *input.Password, existingUser.RoleID, existingUser.FirstName, existingUser.LastName, updatedAt, UserID)
+	_, err = r.db.Exec(query, existingUser.Username, existingUser.Email, existingUser.Password, existingUser.RoleID, existingUser.FirstName, existingUser.LastName, updatedAt, UserID)
 	if err != nil {
 		return err
 	}
@@ -148,11 +149,11 @@ func (r *AdminMysql) BackupData(backupPath string) error {
 	cmd := exec.Command(
 		"docker",
 		"exec",
-		"request-manager-db",
+		"request_manager",
 		"mysqldump",
 		"-u",
 		"root",
-		"-pROOT",
+		"-p123123",
 		"mysql",
 	)
 
@@ -195,11 +196,11 @@ func (r *AdminMysql) RestoreData(backupPath string) error {
 		"docker",
 		"exec",
 		"-i",
-		"request-manager-db",
+		"request_manager",
 		"mysql",
 		"-u",
 		"root",
-		"-pROOT",
+		"-p123123",
 		"mysql",
 	)
 

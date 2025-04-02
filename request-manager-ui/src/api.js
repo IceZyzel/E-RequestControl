@@ -100,3 +100,39 @@ export const notificationApi = {
         }
     },
 };
+
+export const adminApi = {
+    getAllTickets: () => apiClient.get("/admin/tickets/"),
+    getTicketByID: (ticketID) => apiClient.get(`/admin/tickets/${ticketID}`),
+    adminDeleteTicket: (ticketID) =>
+        apiClient.delete(`/admin/tickets/${ticketID}`),
+
+    getAllNotifications: () => apiClient.get("/admin/notifications/"),
+    createNotification: (notificationData) =>
+        apiClient.post("/admin/notifications/", notificationData),
+    deleteNotification: (notificationID) =>
+        apiClient.delete(`/admin/notifications/${notificationID}`),
+
+    getAllUsers: () => apiClient.get("/admin/users/"),
+
+    createUser: async (userData) => {
+        try {
+            const response = await apiClient.post("/admin/users/", userData);
+            return response.data;
+        } catch (error) {
+            console.error("Помилка при створенні користувача:", error);
+            throw error;
+        }
+    },
+    getUserByID: (userID) => apiClient.get(`/admin/users/${userID}`),
+    updateUser: (userID, userData) =>
+        apiClient.put(`/admin/users/${userID}`, userData),
+    deleteUser: (userID) => apiClient.delete(`/admin/users/${userID}`),
+
+    backupData: () => apiClient.post("/admin/data/backup"),
+    restoreData: () => apiClient.post("/admin/data/restore"),
+    exportData:()=> apiClient.get('/admin/data/export'),
+
+
+    importData: (data) => apiClient.post("/admin/data/import", data),
+};
