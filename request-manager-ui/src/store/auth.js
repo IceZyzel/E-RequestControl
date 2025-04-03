@@ -29,14 +29,31 @@ export const useAuthStore = defineStore('auth', {
                 return false;
             }
         },
-        logout() {
+        async logout(silent = false) {
+            try {
+                if (this.token) {
+                    await authApi.logout();
+                }
+            } catch (error) {
+                if (!silent) {
+                    console.error("Logout error:", error);
+                }
+            } finally {
+                this.clearAuthData();
+                window.location.href = '/login';
+            }
+        },
+
+        clearAuthData() {
             this.user = null;
             this.token = '';
             this.role = null;
             localStorage.removeItem('token');
             localStorage.removeItem('role');
+            sessionStorage.clear();
         },
-        setRole(role) {
+
+    setRole(role) {
             this.role = role;
             localStorage.setItem('role', role);
         }

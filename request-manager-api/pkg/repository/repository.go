@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/jmoiron/sqlx"
+	"mime/multipart"
 	Request_Manager "request_manager_api"
 )
 
@@ -33,7 +34,7 @@ type Admin interface {
 	Delete(UserID int) error
 	UpdateUser(UserID int, input Request_Manager.UpdateUserInput, user Request_Manager.User) error
 	BackupData(backupPath string) error
-	RestoreData(backupPath string) error
+	RestoreData(backupPath multipart.File) error
 	ImportData(backupPath string) error
 	ExportData(backupPath string) error
 }

@@ -9,10 +9,12 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
 	"github.com/tealeg/xlsx"
-	"io/ioutil"
+	"io"
 	"log"
+	"mime/multipart"
 	"os"
 	"os/exec"
+	"path/filepath"
 	Request_Manager "request_manager_api"
 	"strings"
 	"time"
@@ -146,75 +148,89 @@ func (r *AdminMysql) UpdateUser(UserID int, input Request_Manager.UpdateUserInpu
 }
 
 func (r *AdminMysql) BackupData(backupPath string) error {
-	cmd := exec.Command(
-		"docker",
-		"exec",
-		"request_manager",
-		"mysqldump",
-		"-u",
-		"root",
-		"-p123123",
-		"mysql",
-	)
+	if err := os.MkdirAll(filepath.Dir(backupPath), 0755); err != nil {
+		return fmt.Errorf("failed to create backup directory: %w", err)
+	}
 
 	outputFile, err := os.Create(backupPath)
 	if err != nil {
-		return fmt.Errorf("error creating backup file: %s", err)
+		return fmt.Errorf("failed to create backup file: %w", err)
 	}
 	defer outputFile.Close()
 
+	cmd := exec.Command(
+		"mariadb-dump",
+		"--host=req-db",
+		"--port=3306",
+		"--user=root",
+		"--password=123123",
+		"--skip-ssl",
+		"request_manager",
+	)
+
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 	cmd.Stdout = outputFile
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("error running mysqldump: %s", err)
+		return fmt.Errorf("backup failed: %v, details: %s", err, stderr.String())
+	}
+
+	if info, err := os.Stat(backupPath); err != nil || info.Size() == 0 {
+		return fmt.Errorf("backup file is empty or not created")
 	}
 
 	return nil
 }
-func (r *AdminMysql) RestoreData(backupPath string) error {
-	backupPath = "backup.sql"
 
-	containerBackupPath := "/var/lib/mysql/backup.sql"
-	cmd := exec.Command(
-		"docker",
-		"cp",
-		backupPath,
-		"request-manager-db:"+containerBackupPath,
-	)
-	if err := cmd.Run(); err != nil {
-		logrus.Errorf("Failed to copy dump file to container: %s", err)
-		return err
-	}
-
-	dumpContent, err := ioutil.ReadFile(backupPath)
+func (r *AdminMysql) RestoreData(backupFile multipart.File) error {
+	tempFile, err := os.CreateTemp("", "restore-*.sql")
 	if err != nil {
-		logrus.Errorf("Failed to read dump file: %s", err)
-		return err
+		logrus.Errorf("Failed to create temp file: %v", err)
+		return fmt.Errorf("failed to create temp file: %v", err)
+	}
+	defer os.Remove(tempFile.Name())
+	defer tempFile.Close()
+
+	if _, err := io.Copy(tempFile, backupFile); err != nil {
+		logrus.Errorf("Failed to save backup file: %v", err)
+		return fmt.Errorf("failed to save backup file: %v", err)
 	}
 
-	mysqlCmd := exec.Command(
-		"docker",
-		"exec",
-		"-i",
-		"request_manager",
-		"mysql",
-		"-u",
-		"root",
+	logrus.Infof("Starting database restore from temporary file: %s", tempFile.Name())
+
+	dumpFile, err := os.Open(tempFile.Name())
+	if err != nil {
+		logrus.Errorf("Failed to open dump file: %v", err)
+		return fmt.Errorf("failed to open dump file: %v", err)
+	}
+	defer dumpFile.Close()
+
+	cmd := exec.Command(
+		"mariadb",
+		"-h", "req-db",
+		"-P", "3306",
+		"-u", "root",
 		"-p123123",
-		"mysql",
+		"--skip-ssl",
+		"request_manager",
 	)
 
-	mysqlCmd.Stdin = bytes.NewReader(dumpContent)
-	mysqlCmd.Stdout = os.Stdout
-	mysqlCmd.Stderr = os.Stderr
+	cmd.Stdin = dumpFile
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 
-	if err := mysqlCmd.Run(); err != nil {
-		logrus.Errorf("Failed to restore data in container: %s", err)
-		return err
+	logrus.Info("Executing database restore command")
+	if err := cmd.Run(); err != nil {
+		errorDetails := stderr.String()
+		logrus.Errorf("Restore command failed: %v, details: %s", err, errorDetails)
+		return fmt.Errorf("restore failed: %v, details: %s", err, errorDetails)
 	}
 
+	logrus.Info("Database restore completed successfully")
 	return nil
 }
+
 func (r *AdminMysql) ExportData(exportPath string) error {
 	logger := logrus.New()
 

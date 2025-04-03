@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { jwtDecode } from 'jwt-decode';
 import Login from '../views/Login.vue';
 import Registration from '../views/Registration.vue';
 import RegisterAdmin from '../views/RegisterAdmin.vue';
@@ -7,11 +8,31 @@ import AdminDashboard from "../views/AdminDashboard.vue";
 
 const routes = [
     { path: '/', redirect: '/login' },
-    { path: '/login', component: Login },
-    { path: '/register', component: Registration },
-    { path: '/registerAdmin', component: RegisterAdmin },
-    { path: '/dashboard', component: Dashboard, meta: { requiresUser: true } },
-    { path: '/admin-dashboard', component: AdminDashboard, meta: { requiresAdmin: true } },
+    {
+        path: '/login',
+        component: Login,
+        meta: { requiresGuest: true }
+    },
+    {
+        path: '/register',
+        component: Registration,
+        meta: { requiresGuest: true }
+    },
+    {
+        path: '/registerAdmin',
+        component: RegisterAdmin,
+        meta: { requiresGuest: true }
+    },
+    {
+        path: '/dashboard',
+        component: Dashboard,
+        meta: { requiresUser: true }
+    },
+    {
+        path: '/admin-dashboard',
+        component: AdminDashboard,
+        meta: { requiresAdmin: true }
+    },
 ];
 
 const router = createRouter({
@@ -19,11 +40,37 @@ const router = createRouter({
     routes,
 });
 
+const isTokenValid = (token) => {
+    if (!token) return false;
+
+    try {
+        const decoded = jwtDecode(token);
+        const currentTime = Date.now() / 1000;
+
+        if (decoded.exp < currentTime) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            return false;
+        }
+        return true;
+    } catch (error) {
+        console.error('Invalid token:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        return false;
+    }
+};
+
 router.beforeEach((to, from, next) => {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
+    const isAuthenticated = token && isTokenValid(token);
 
-    if (!token && !['/login', '/register', '/registerAdmin'].includes(to.path)) {
+    if (to.meta.requiresGuest && isAuthenticated) {
+        return next(role === '1' ? '/admin-dashboard' : '/dashboard');
+    }
+
+    if ((to.meta.requiresUser || to.meta.requiresAdmin) && !isAuthenticated) {
         return next('/login');
     }
 

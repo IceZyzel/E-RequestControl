@@ -7,13 +7,14 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	Request_Manager "request_manager_api"
 	"request_manager_api/pkg/repository"
+	"sync"
 	"time"
 )
 
 const (
 	salt       = "dfjaklsjlk343298hkjha"
 	signingKey = "wdfsjklfsdYWFD##567Fs"
-	tokenTTL   = 12 * time.Hour
+	tokenTTL   = 1 * time.Hour
 )
 
 type tokenClaims struct {
@@ -23,7 +24,20 @@ type tokenClaims struct {
 }
 
 type AuthService struct {
-	repo repository.Authorization
+	repo      repository.Authorization
+	blacklist map[string]time.Time
+	mu        sync.Mutex
+}
+
+func (s *AuthService) IsTokenValid(token string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	expiry, exists := s.blacklist[token]
+	if exists && time.Now().Before(expiry) {
+		return false
+	}
+	return true
 }
 
 func NewAuthService(repo repository.Authorization) *AuthService {
@@ -72,7 +86,42 @@ func (s *AuthService) GenerateToken(username, password string) (string, error) {
 	return token.SignedString([]byte(signingKey))
 }
 
+func (s *AuthService) InvalidateToken(token string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	claims := &tokenClaims{}
+	_, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(signingKey), nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	s.blacklist[token] = time.Unix(claims.ExpiresAt, 0)
+	return nil
+}
+
+func (s *AuthService) CleanupBlacklist() {
+	ticker := time.NewTicker(24 * time.Hour)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		s.mu.Lock()
+		for token, expiry := range s.blacklist {
+			if time.Now().After(expiry) {
+				delete(s.blacklist, token)
+			}
+		}
+		s.mu.Unlock()
+	}
+}
+
 func (s *AuthService) ParseToken(accessToken string) (int, int, error) {
+	if !s.IsTokenValid(accessToken) {
+		return 0, 0, errors.New("token is invalidated")
+	}
 	token, err := jwt.ParseWithClaims(accessToken, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("invalid signing method")

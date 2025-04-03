@@ -1,6 +1,7 @@
 package services
 
 import (
+	"mime/multipart"
 	Request_Manager "request_manager_api"
 	"request_manager_api/pkg/repository"
 )
@@ -26,6 +27,7 @@ type Authorization interface {
 	CreateUser(user Request_Manager.User) (int, error)
 	GenerateToken(username, password string) (string, error)
 	ParseToken(token string) (int, int, error)
+	InvalidateToken(token string) error
 }
 type Admin interface {
 	GetUserByID(userID int) (Request_Manager.User, error)
@@ -34,7 +36,7 @@ type Admin interface {
 	Delete(UserID int) error
 	UpdateUser(UserID int, input Request_Manager.UpdateUserInput, user Request_Manager.User) error
 	BackupData(backupPath string) error
-	RestoreData(backupPath string) error
+	RestoreData(backupPath multipart.File) error
 	ImportData(backupPath string) error
 	ExportData(backupPath string) error
 }

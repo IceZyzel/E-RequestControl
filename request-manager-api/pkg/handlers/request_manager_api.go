@@ -2,10 +2,14 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	Request_Manager "request_manager_api"
 	"strconv"
+	"time"
 )
 
 func (h *Handlers) getAllTickets(c *gin.Context) {
@@ -241,14 +245,6 @@ func (h *Handlers) deleteUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "User deleted"})
 }
 
-func (h *Handlers) getUserRoles(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "getUserRoles endpoint"})
-}
-
-func (h *Handlers) updateUserRole(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "updateUserRole endpoint"})
-}
-
 func (h *Handlers) createNotification(c *gin.Context) {
 	var notification Request_Manager.Notification
 	if err := c.BindJSON(&notification); err != nil {
@@ -283,42 +279,72 @@ func (h *Handlers) deleteNotification(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Notification deleted"})
 }
 func (h *Handlers) backupData(c *gin.Context) {
-	backupPath := "backup.sql"
+	backupFile := "/root/backup_" + time.Now().Format("20060102_150405") + ".sql"
 
-	file, err := os.Create(backupPath)
-	if err != nil {
+	if err := os.MkdirAll("/root", os.ModePerm); err != nil {
+		log.Printf("Failed to create backup directory: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to create backup file",
-		})
-		return
-	}
-	defer file.Close()
-
-	if err := h.service.Admin.BackupData(backupPath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to backup data",
+			"error":   "Failed to create backup directory",
+			"details": err.Error(),
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Data backup successful",
-	})
+	if err := h.service.Admin.BackupData(backupFile); err != nil {
+		log.Printf("Backup failed: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to generate backup",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.Header("Content-Disposition", "attachment; filename="+filepath.Base(backupFile))
+	c.Header("Content-Type", "application/octet-stream")
+	c.File(backupFile)
+
+	go func() {
+		time.Sleep(2 * time.Second)
+		if err := os.Remove(backupFile); err != nil {
+			log.Printf("Failed to remove backup file: %v", err)
+		}
+	}()
 }
+
 func (h *Handlers) restoreData(c *gin.Context) {
-	restorePath := "backup.sql"
+	logrus.Info("Starting data restore operation")
 
-	if err := h.service.Admin.RestoreData(restorePath); err != nil {
+	file, err := c.FormFile("file")
+	if err != nil {
+		logrus.Errorf("No file uploaded: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
+		return
+	}
+
+	logrus.Infof("Restoring from file: %s (size: %d bytes)", file.Filename, file.Size)
+
+	f, err := file.Open()
+	if err != nil {
+		logrus.Errorf("Failed to open uploaded file: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open file"})
+		return
+	}
+	defer f.Close()
+
+	if err := h.service.Admin.RestoreData(f); err != nil {
+		logrus.Errorf("Data restore failed: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to restore data",
+			"error":   "Failed to restore data",
+			"details": err.Error(),
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Data restore successful",
-	})
+	logrus.Info("Data restored successfully")
+
+	c.JSON(http.StatusOK, gin.H{"message": "Data restored successfully"})
 }
+
 func (h *Handlers) exportData(c *gin.Context) {
 	exportPath := "export.xlsx"
 

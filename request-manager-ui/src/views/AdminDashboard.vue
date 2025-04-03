@@ -1,7 +1,11 @@
 <template>
   <div class="admin-dashboard">
+    <header class="admin-header">
     <h1>Адмін Панель Управління</h1>
-
+    <button class="logout-btn" @click="authStore.logout()">
+      <i class="fas fa-sign-out-alt"></i> Вийти
+    </button>
+    </header>
     <!-- Users Section -->
     <section class="users-section" v-if="users.length > 0">
       <div class="section-header">
@@ -62,10 +66,12 @@
         <table class="data-table">
           <thead>
           <tr>
-            <th>Заголовок</th>
+            <th>Назва</th>
+            <th>Опис</th>
             <th>Статус</th>
             <th>Призначено</th>
             <th>Відправник</th>
+            <th>Створено</th>
             <th>Оновлено</th>
             <th>Дії</th>
           </tr>
@@ -73,13 +79,11 @@
           <tbody>
           <tr v-for="ticket in tickets" :key="ticket.TicketID">
             <td>{{ ticket.Title }}</td>
-            <td>
-                <span :class="['status-badge', getStatusClass(ticket.Status)]">
-                  {{ ticket.Status }}
-                </span>
-            </td>
+            <td class="ticket-description">{{ ticket.Description }}</td>
+            <td>{{ ticket.Status }}</td>
             <td>{{ ticket.AssigneeUsername }}</td>
             <td>{{ ticket.SenderUsername }}</td>
+            <td>{{ formatDate(ticket.CreatedAt) }}</td>
             <td>{{ formatDate(ticket.UpdatedAt) }}</td>
             <td class="actions">
               <button class="delete-btn" @click="confirmDelete('ticket', ticket.TicketID, ticket.Title)">
@@ -244,6 +248,8 @@
 import { ref, onMounted } from "vue";
 import { adminApi } from "../api";
 import { format } from 'date-fns';
+import { useAuthStore } from '../store/auth';
+import { useRouter } from 'vue-router';
 
 export default {
   name: "AdminDashboard",
@@ -253,6 +259,8 @@ export default {
     const users = ref([]);
     const editUserData = ref(null);
     const showCreateUserModal = ref(false);
+    const authStore = useAuthStore();
+    const router = useRouter();
 
     const newUser = ref({
       Username: '',
@@ -273,16 +281,6 @@ export default {
 
     const formatDate = (dateString) => {
       return format(new Date(dateString), 'dd.MM.yyyy HH:mm');
-    };
-
-    const getStatusClass = (status) => {
-      switch (status.toLowerCase()) {
-        case 'відкрито': return 'open';
-        case 'в роботі': return 'in-progress';
-        case 'вирішено': return 'resolved';
-        case 'закрито': return 'closed';
-        default: return '';
-      }
     };
 
     const fetchTickets = async () => {
@@ -354,7 +352,7 @@ export default {
     };
 
     const editUser = (user) => {
-      editUserData.value = { ...user };
+      editUserData.value = {...user};
     };
 
     const submitEditUser = async () => {
@@ -397,56 +395,104 @@ export default {
 
     const backupData = async () => {
       try {
-        await adminApi.backupData();
-        alert("Дані успішно скопійовані!");
+        const response = await adminApi.backupData();
+
+        const blob = new Blob([response.data], { type: 'application/sql' });
+        const downloadUrl = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+
+        const contentDisposition = response.headers['content-disposition'];
+        let filename = 'backup_' + new Date().toISOString().slice(0, 10) + '.sql';
+
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+          if (filenameMatch && filenameMatch[1]) {
+            filename = filenameMatch[1];
+          }
+        }
+
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(downloadUrl);
+        }, 100);
+
       } catch (error) {
-        console.error("Помилка при резервному копіюванні даних:", error);
+        console.error('Backup error:', error);
+        alert(`Backup failed: ${error.response?.data?.message || error.message}`);
       }
     };
 
+
     const restoreData = async () => {
-      try {
-        await adminApi.restoreData();
-        alert("Дані успішно відновлені!");
-        // Refresh all data after restore
-        await Promise.all([fetchUsers(), fetchTickets(), fetchNotifications()]);
-      } catch (error) {
-        console.error("Помилка при відновленні даних:", error);
-      }
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.sql';
+
+      fileInput.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+
+          await adminApi.restoreData(formData);
+          alert('Дані успішно відновлені!');
+
+          await Promise.all([
+            fetchUsers(),
+            fetchTickets(),
+            fetchNotifications()
+          ]);
+        } catch (error) {
+          console.error('Помилка при відновленні даних:', error);
+          alert(`Помилка при відновленні даних: ${error.response?.data?.error || error.message}`);
+        }
+      };
+
+      fileInput.click();
     };
 
     const exportData = async () => {
       try {
-        const response = await adminApi.exportData();
-        const blob = new Blob([response.data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        const link = document.createElement("a");
+        const data = await adminApi.exportData();
+        const blob = new Blob([data], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+        const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = "data_export.xlsx";
+        link.download = `export_${new Date().toISOString().slice(0, 10)}.xlsx`;
         link.click();
+        alert('Дані успішно експортовані!');
       } catch (error) {
-        console.error("Помилка при експорті даних:", error);
+        console.error('Помилка при експорті даних:', error);
+        alert('Помилка при експорті даних!');
       }
     };
 
     const importData = async () => {
-      const fileInput = document.createElement("input");
-      fileInput.type = "file";
-      fileInput.accept = ".json,.xlsx";
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.xlsx,.xls';
+
       fileInput.onchange = async (e) => {
         const file = e.target.files[0];
         if (file) {
           try {
-            const formData = new FormData();
-            formData.append("file", file);
-            await adminApi.importData(formData);
-            alert("Дані успішно імпортовані!");
-            // Refresh all data after import
+            await adminApi.importData(file);
+            alert('Дані успішно імпортовані!');
             await Promise.all([fetchUsers(), fetchTickets(), fetchNotifications()]);
           } catch (error) {
-            console.error("Помилка при імпорті даних:", error);
+            console.error('Помилка при імпорті даних:', error);
+            alert('Помилка при імпорті даних!');
           }
         }
       };
+
       fileInput.click();
     };
 
@@ -462,8 +508,8 @@ export default {
       newUser,
       showCreateUserModal,
       confirmModal,
+      authStore,
       formatDate,
-      getStatusClass,
       confirmDelete,
       executeDelete,
       editUser,
@@ -512,7 +558,13 @@ body {
   margin: 0 auto;
   padding: 2rem;
 }
-
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  position: relative;
+}
 h1 {
   text-align: center;
   margin-bottom: 2rem;
@@ -698,7 +750,9 @@ button i {
   border-radius: 8px;
   font-weight: 500;
 }
-
+.data-management-section h2{
+  padding-top: 30px;
+}
 .backup {
   background-color: #10b981;
   color: white;
@@ -904,7 +958,27 @@ button i {
   justify-content: flex-end;
   gap: 1rem;
 }
+.logout-btn {
+  background-color: var(--danger-color);
+  color: var(--white);
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 1rem;
+}
 
+.logout-btn:hover {
+  background-color: #e5177e;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.3);
+}
+
+.logout-btn i {
+  font-size: 1.1rem;
+}
 @media (max-width: 768px) {
   .admin-dashboard {
     padding: 1rem;
@@ -920,6 +994,16 @@ button i {
 
   .modal {
     width: 95%;
+  }
+  .admin-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .logout-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>

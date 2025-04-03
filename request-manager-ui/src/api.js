@@ -25,7 +25,17 @@ apiClient.interceptors.response.use(
     (response) => {
         return response;
     },
-    (error) => {
+    async (error) => {
+        const originalRequest = error.config;
+
+        if (error.response?.status === 401 &&
+            !originalRequest.url.includes('/auth/logout') &&
+            !originalRequest.url.includes('/auth/login')) {
+
+            const authStore = useAuthStore();
+            await authStore.logout();
+        }
+
         return Promise.reject(error);
     }
 );
@@ -33,6 +43,7 @@ apiClient.interceptors.response.use(
 export const authApi = {
     login: (username, password) =>
         apiClient.post("/auth/login", { username, password }),
+    logout: () => apiClient.post("/auth/logout"),
     register: (firstname, lastname, email, username, password) =>
         apiClient.post("/auth/register", {
             firstname,
@@ -129,10 +140,31 @@ export const adminApi = {
         apiClient.put(`/admin/users/${userID}`, userData),
     deleteUser: (userID) => apiClient.delete(`/admin/users/${userID}`),
 
-    backupData: () => apiClient.post("/admin/data/backup"),
-    restoreData: () => apiClient.post("/admin/data/restore"),
-    exportData:()=> apiClient.get('/admin/data/export'),
+    backupData: () => apiClient.post('/admin/data/backup', null, {
+        responseType: 'blob',
+        headers: {
+            'Accept': 'application/octet-stream'
+        }
+    }),
+    restoreData: (formData) => apiClient.post('/admin/data/restore', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    }),
+    exportData: async () => {
+        const response = await apiClient.get('/admin/data/export', {
+            responseType: 'blob'
+        });
+        return response.data;
+    },
 
-
-    importData: (data) => apiClient.post("/admin/data/import", data),
+    importData: async (importFile) => {
+        const formData = new FormData();
+        formData.append('file', importFile);
+        await apiClient.post('/admin/data/import', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+    }
 };

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"mime/multipart"
 	Request_Manager "request_manager_api"
 	"request_manager_api/pkg/repository"
 )
@@ -55,7 +56,7 @@ func (s *AdministratorService) BackupData(backupPath string) error {
 
 	return nil
 }
-func (s *AdministratorService) RestoreData(backupPath string) error {
+func (s *AdministratorService) RestoreData(backupPath multipart.File) error {
 	err := s.repo.RestoreData(backupPath)
 	if err != nil {
 		return err

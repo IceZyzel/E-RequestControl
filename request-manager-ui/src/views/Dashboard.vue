@@ -1,7 +1,11 @@
 <template>
-  <div class="admin-dashboard">
+  <div class="dashboard">
+    <header class="dashboard-header">
     <h1>Ласкаво просимо до панелі управління тікетами</h1>
-
+    <button class="logout-btn" @click="authStore.logout()">
+      <i class="fas fa-sign-out-alt"></i> Вийти
+    </button>
+    </header>
     <!-- Tickets Section -->
     <section class="tickets-section" v-if="tickets.length > 0">
       <div class="section-header">
@@ -11,11 +15,12 @@
         <table class="data-table">
           <thead>
           <tr>
-            <th>Заголовок</th>
+            <th>Назва</th>
             <th>Опис</th>
             <th>Статус</th>
             <th>Призначено</th>
             <th>Відправник</th>
+            <th>Створено</th>
             <th>Оновлено</th>
             <th>Дії</th>
           </tr>
@@ -24,13 +29,10 @@
           <tr v-for="ticket in tickets" :key="ticket.TicketID">
             <td>{{ ticket.Title }}</td>
             <td class="ticket-description">{{ ticket.Description }}</td>
-            <td>
-                <span :class="['status-badge', getStatusClass(ticket.Status)]">
-                  {{ ticket.Status }}
-                </span>
-            </td>
+            <td>{{ ticket.Status }}</td>
             <td>{{ ticket.AssigneeUsername }}</td>
             <td>{{ ticket.SenderUsername }}</td>
+            <td>{{ formatDate(ticket.CreatedAt) }}</td>
             <td>{{ formatDate(ticket.UpdatedAt) }}</td>
             <td class="actions">
               <button class="edit-btn" @click="editTicket(ticket)">
@@ -172,6 +174,7 @@ import { ref, onMounted } from "vue";
 import { requestApi, notificationApi } from "../api";
 import { useAuthStore } from "../store/auth";
 import { format } from 'date-fns';
+import {useRouter} from "vue-router";
 
 export default {
   name: "TicketDashboard",
@@ -180,6 +183,8 @@ export default {
     const notifications = ref([]);
     const users = ref([]);
     const authStore = useAuthStore();
+    const router = useRouter();
+
     const newTicket = ref({
       Title: '',
       Description: '',
@@ -198,16 +203,6 @@ export default {
 
     const formatDate = (dateString) => {
       return format(new Date(dateString), 'dd.MM.yyyy HH:mm');
-    };
-
-    const getStatusClass = (status) => {
-      switch (status.toLowerCase()) {
-        case 'відкрито': return 'open';
-        case 'в роботі': return 'in-progress';
-        case 'вирішено': return 'resolved';
-        case 'закрито': return 'closed';
-        default: return '';
-      }
     };
 
     const fetchUsers = async () => {
@@ -316,8 +311,8 @@ export default {
       editTicketData,
       showCreateTicketModal,
       confirmModal,
+      authStore,
       formatDate,
-      getStatusClass,
       confirmDelete,
       executeDelete,
       deleteTicket,
@@ -359,12 +354,18 @@ body {
   background-color: #f5f7fa;
 }
 
-.admin-dashboard {
+.dashboard {
   max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
 }
-
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  position: relative;
+}
 h1 {
   text-align: center;
   margin-bottom: 2rem;
@@ -732,13 +733,44 @@ textarea:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
 }
+.logout-btn {
+  background-color: var(--danger-color);
+  color: var(--white);
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 1rem;
+}
+
+.logout-btn:hover {
+  background-color: #e5177e;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.3);
+}
+
+.logout-btn i {
+  font-size: 1.1rem;
+}
 @media (max-width: 768px) {
-  .admin-dashboard {
+  .dashboard {
     padding: 1rem;
   }
 
   .modal {
     width: 95%;
+  }
+  .dashboard-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .logout-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>
