@@ -1,10 +1,10 @@
 <template>
   <div class="admin-dashboard">
     <header class="admin-header">
-    <h1>Адмін Панель Управління</h1>
-    <button class="logout-btn" @click="authStore.logout()">
-      <i class="fas fa-sign-out-alt"></i> Вийти
-    </button>
+      <h1>Адмін Панель Управління</h1>
+      <button class="logout-btn" @click="authStore.logout()">
+        <i class="fas fa-sign-out-alt"></i> Вийти
+      </button>
     </header>
     <!-- Users Section -->
     <section class="users-section" v-if="users.length > 0">
@@ -60,9 +60,56 @@
     </div>
 
     <!-- Tickets Section -->
-    <section class="tickets-section" v-if="tickets.length > 0">
-      <h2>Тікети</h2>
-      <div class="table-container">
+    <section class="tickets-section">
+      <div class="section-header">
+        <h2>Тікети</h2>
+      </div>
+
+      <!-- Filter Controls -->
+      <div class="ticket-filters">
+        <div class="filter-group">
+          <label for="sender-filter">Відправник:</label>
+          <input
+              id="sender-filter"
+              v-model="filters.sender"
+              type="text"
+              placeholder="Фільтр по відправнику"
+              @input="applyFilters"
+          >
+        </div>
+
+        <div class="filter-group">
+          <label for="assignee-filter">Призначено:</label>
+          <input
+              id="assignee-filter"
+              v-model="filters.assignee"
+              type="text"
+              placeholder="Фільтр по призначеному"
+              @input="applyFilters"
+          >
+        </div>
+
+        <div class="filter-group">
+          <label for="status-filter">Статус:</label>
+          <select
+              id="status-filter"
+              v-model="filters.status"
+              @change="applyFilters"
+          >
+            <option value="">Всі статуси</option>
+            <option v-for="status in statusOptions" :key="status" :value="status">
+              {{ status }}
+            </option>
+          </select>
+        </div>
+
+        <button class="reset-btn" @click="resetFilters">
+          <i class="fas fa-times"></i> Скинути
+        </button>
+      </div>
+
+      <!-- Tickets Table -->
+      <div class="table-container" v-if="tickets.length > 0">
         <table class="data-table">
           <thead>
           <tr>
@@ -72,33 +119,67 @@
             <th>Призначено</th>
             <th>Відправник</th>
             <th>Створено</th>
-            <th>Оновлено</th>
             <th>Дії</th>
           </tr>
           </thead>
           <tbody>
-          <tr v-for="ticket in tickets" :key="ticket.TicketID">
+          <tr v-for="ticket in paginatedTickets" :key="ticket.TicketID">
             <td>{{ ticket.Title }}</td>
-            <td class="ticket-description">{{ ticket.Description }}</td>
-            <td>{{ ticket.Status }}</td>
-            <td>{{ ticket.AssigneeUsername }}</td>
+            <td class="ticket-description">
+              <span class="description-text">
+                {{ truncateDescription(ticket.Description, ticket.TicketID) }}
+              </span>
+              <button
+                  v-if="ticket.Description && ticket.Description.length > 100"
+                  class="show-more-btn"
+                  @click="toggleDescription(ticket.TicketID)"
+              >
+                {{ expandedDescriptions[ticket.TicketID] ? 'Менше' : 'Більше' }}
+              </button>
+            </td>
+            <td>
+              <span :class="['status-badge', getStatusClass(ticket.Status)]">
+                {{ ticket.Status }}
+              </span>
+            </td>
+            <td>{{ ticket.AssigneeUsername || 'Не призначено' }}</td>
             <td>{{ ticket.SenderUsername }}</td>
             <td>{{ formatDate(ticket.CreatedAt) }}</td>
-            <td>{{ formatDate(ticket.UpdatedAt) }}</td>
             <td class="actions">
-              <button class="delete-btn" @click="confirmDelete('ticket', ticket.TicketID, ticket.Title)">
+              <button class="edit-btn" @click="editTicket(ticket)" title="Редагувати">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="delete-btn" @click="confirmDelete('ticket', ticket.TicketID, ticket.Title)" title="Видалити">
                 <i class="fas fa-trash-alt"></i>
               </button>
             </td>
           </tr>
           </tbody>
         </table>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-controls" v-if="totalPages > 1">
+          <button class="pagination-btn" @click="prevPage" :disabled="currentPage === 1">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <span class="page-info">
+          Сторінка {{ currentPage }} з {{ totalPages }}
+        </span>
+          <button class="pagination-btn" @click="nextPage" :disabled="currentPage === totalPages">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="empty-state" v-else>
+        <i class="fas fa-ticket-alt empty-icon"></i>
+        <p>Тікети не знайдено</p>
+        <button class="reset-btn" @click="resetFilters">
+          <i class="fas fa-times"></i> Скинути фільтри
+        </button>
       </div>
     </section>
-    <div class="empty-state" v-else>
-      <i class="fas fa-ticket-alt empty-icon"></i>
-      <p>Список тікетів порожній</p>
-    </div>
+
 
     <!-- Notifications Section -->
     <section class="notifications-section" v-if="notifications.length > 0">
@@ -245,7 +326,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from "vue";
+import { ref, onMounted,computed } from "vue";
 import { adminApi } from "../api";
 import { format } from 'date-fns';
 import { useAuthStore } from '../store/auth';
@@ -255,12 +336,23 @@ export default {
   name: "AdminDashboard",
   setup() {
     const tickets = ref([]);
+    const filteredTickets = ref([]);
     const notifications = ref([]);
     const users = ref([]);
     const editUserData = ref(null);
     const showCreateUserModal = ref(false);
     const authStore = useAuthStore();
     const router = useRouter();
+    const statusOptions = ref(['Новий', 'Оновлено']);
+    const expandedDescriptions = ref({});
+    const currentPage = ref(1);
+    const itemsPerPage = ref(10);
+
+    const filters = ref({
+      sender: '',
+      assignee: '',
+      status: ''
+    });
 
     const newUser = ref({
       Username: '',
@@ -280,18 +372,86 @@ export default {
     });
 
     const formatDate = (dateString) => {
+      if (!dateString) return 'Немає дати';
       return format(new Date(dateString), 'dd.MM.yyyy HH:mm');
     };
 
-    const fetchTickets = async () => {
+    const fetchTickets = async (forceUseFilters = false) => {
       try {
-        const response = await adminApi.getAllTickets();
+        const shouldUseFilters = forceUseFilters && (
+            filters.value.sender?.trim() ||
+            filters.value.assignee?.trim() ||
+            filters.value.status?.trim()
+        );
+
+        const response = shouldUseFilters
+            ? await adminApi.getFilteredTickets(filters.value)
+            : await adminApi.getAllTickets();
+
         tickets.value = response.data || [];
+        filteredTickets.value = [...tickets.value];
+        currentPage.value = 1;
       } catch (error) {
         console.error("Помилка при завантаженні тікетів:", error);
+        tickets.value = [];
+        filteredTickets.value = [];
       }
     };
+    const applyFilters = async () => {
+      await fetchTickets(true);
+    };
 
+    const toggleDescription = (ticketId) => {
+      expandedDescriptions.value = {
+        ...expandedDescriptions.value,
+        [ticketId]: !expandedDescriptions.value[ticketId]
+      };
+    };
+
+    const truncateDescription = (description, ticketId) => {
+      if (!description) return '';
+      const shouldTruncate = description.length > 100 && !expandedDescriptions.value[ticketId];
+      return shouldTruncate ? `${description.substring(0, 100)}...` : description;
+    };
+
+    const getStatusClass = (status) => {
+      switch (status) {
+        case 'Новий': return 'status-new';
+        case 'Оновлено': return 'status-in-progress';
+        default: return '';
+      }
+    };
+    const resetFilters = async () => {
+      filters.value = {
+        sender: null,
+        assignee: null,
+        status: null
+      };
+      await fetchTickets(false);
+    };
+    // Pagination
+    const totalPages = computed(() =>
+        Math.ceil(filteredTickets.value.length / itemsPerPage.value)
+    );
+
+    const paginatedTickets = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage.value;
+      const end = start + itemsPerPage.value;
+      return filteredTickets.value.slice(start, end);
+    });
+
+    const nextPage = () => {
+      if (currentPage.value < totalPages.value) currentPage.value++;
+    };
+
+    const prevPage = () => {
+      if (currentPage.value > 1) currentPage.value--;
+    };
+
+    const editTicket = (ticket) => {
+      // Implement ticket editing logic
+      console.log('Editing ticket:', ticket);
+    };
     const fetchNotifications = async () => {
       try {
         const response = await adminApi.getAllNotifications();
@@ -326,8 +486,6 @@ export default {
       try {
         await confirmModal.value.callback(confirmModal.value.id);
         confirmModal.value.show = false;
-
-        // Refresh data
         if (confirmModal.value.type === 'user') await fetchUsers();
         else if (confirmModal.value.type === 'ticket') await fetchTickets();
         else await fetchNotifications();
@@ -515,10 +673,29 @@ export default {
       editUser,
       submitEditUser,
       submitCreateUser,
+
+      filters,
+      statusOptions,
+      filteredTickets,
+      applyFilters,
+      resetFilters,
+      getStatusClass,
+      toggleDescription,
+      truncateDescription,
+      paginatedTickets,
+      totalPages,
+      currentPage,
+      nextPage,
+      prevPage,
+      editTicket,
+
       backupData,
       restoreData,
       exportData,
-      importData
+      importData,
+
+      expandedDescriptions,
+      itemsPerPage
     };
   }
 };
@@ -979,6 +1156,100 @@ button i {
 .logout-btn i {
   font-size: 1.1rem;
 }
+.ticket-filters {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: var(--white);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-group label {
+  font-weight: 500;
+  color: var(--dark-color);
+  white-space: nowrap;
+}
+
+.filter-group input,
+.filter-group select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  min-width: 150px;
+}
+
+.reset-btn {
+  background-color: var(--gray-color);
+  color: var(--white);
+  padding: 0.5rem 1rem;
+}
+
+.reset-btn:hover {
+  background-color: #5a6268;
+}
+.ticket-description {
+  max-width: 300px;
+  position: relative;
+}
+
+.description-text {
+  display: inline;
+  word-wrap: break-word;
+}
+
+.show-more-btn {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.5rem;
+  margin-left: 0.5rem;
+  white-space: nowrap;
+}
+
+.show-more-btn:hover {
+  text-decoration: underline;
+}
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: var(--white);
+  border-top: 1px solid var(--border-color);
+}
+
+.pagination-btn {
+  padding: 0.5rem 0.8rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.pagination-btn:disabled {
+  background-color: var(--gray-color);
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 0.9rem;
+  color: var(--gray-color);
+}
+
 @media (max-width: 768px) {
   .admin-dashboard {
     padding: 1rem;
@@ -1000,7 +1271,29 @@ button i {
     gap: 1rem;
     text-align: center;
   }
+  .ticket-filters {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .ticket-description {
+    max-width: 200px;
+  }
+  .filter-group {
+    width: 100%;
+  }
 
+  .filter-group input,
+  .filter-group select {
+    width: 100%;
+  }
+  .reset-btn {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .ticket-description {
+    max-width: 200px;
+  }
   .logout-btn {
     width: 100%;
     justify-content: center;

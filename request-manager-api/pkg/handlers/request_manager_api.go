@@ -12,10 +12,30 @@ import (
 	"time"
 )
 
-func (h *Handlers) getAllTickets(c *gin.Context) {
+func (h *Handlers) getTickets(c *gin.Context) {
+	SenderUsername := c.Query("sender")
+	AssigneeUsername := c.Query("assignee")
+	Status := c.Query("status")
+
+	if SenderUsername != "" || AssigneeUsername != "" || Status != "" {
+		filter := Request_Manager.TicketFilter{
+			SenderUsername:   SenderUsername,
+			AssigneeUsername: AssigneeUsername,
+			Status:           Status,
+		}
+
+		tickets, err := h.service.Admin.GetFilteredTickets(filter)
+		if err != nil {
+			newErrorResponse(c, http.StatusInternalServerError, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, tickets)
+		return
+	}
+
 	tickets, err := h.service.Ticket.GetAllTickets()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, tickets)

@@ -47,7 +47,9 @@ func (s *AdministratorService) GetAllUsers() ([]Request_Manager.User, error) {
 func (s *AdministratorService) Delete(UserID int) error {
 	return s.repo.Delete(UserID)
 }
-
+func (s *AdministratorService) GetFilteredTickets(filter Request_Manager.TicketFilter) ([]Request_Manager.Ticket, error) {
+	return s.repo.GetFilteredTickets(filter)
+}
 func (s *AdministratorService) BackupData(backupPath string) error {
 	err := s.repo.BackupData(backupPath)
 	if err != nil {

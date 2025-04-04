@@ -16,28 +16,23 @@ func NewHandler(services *services.Service) *Handlers {
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		origin := c.GetHeader("Origin")
 		allowedOrigins := []string{
 			"http://localhost:5173",
 			"http://localhost:3000",
 		}
 
-		origin := c.GetHeader("Origin")
 		if contains(allowedOrigins, origin) {
 			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
-		} else {
-			c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173") // Default fallback
 		}
 
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
-
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
-
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization, Accept")
 		c.Writer.Header().Set("Access-Control-Expose-Headers", "Authorization")
-
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(http.StatusOK)
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
 
@@ -87,7 +82,7 @@ func (h *Handlers) InitRoutes() *gin.Engine {
 	{
 		adminTickets := admin.Group("/tickets")
 		{
-			adminTickets.GET("/", h.getAllTickets)
+			adminTickets.GET("/", h.getTickets)
 			adminTickets.GET("/:ticketID", h.getTicketByID)
 			adminTickets.DELETE("/:ticketID", h.adminDeleteTicket)
 		}

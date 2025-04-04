@@ -113,7 +113,27 @@ export const notificationApi = {
 };
 
 export const adminApi = {
-    getAllTickets: () => apiClient.get("/admin/tickets/"),
+
+    getFilteredTickets: (filters) => {
+        const params = new URLSearchParams();
+
+        if (filters.sender && filters.sender.trim()) {
+            params.append('sender', filters.sender.trim());
+        }
+        if (filters.assignee && filters.assignee.trim()) {
+            params.append('assignee', filters.assignee.trim());
+        }
+        if (filters.status && filters.status.trim()) {
+            params.append('status', filters.status.trim());
+        }
+
+        console.log('Request URL:', `/admin/tickets/?${params.toString()}`);
+        if (filters.sender !="" || filters.assignee !="" || filters.status !=""){
+            return apiClient.get(`/admin/tickets/?${params.toString()}`);
+        }
+    },
+    getAllTickets: () => apiClient.get('/admin/tickets/'),
+
     getTicketByID: (ticketID) => apiClient.get(`/admin/tickets/${ticketID}`),
     adminDeleteTicket: (ticketID) =>
         apiClient.delete(`/admin/tickets/${ticketID}`),

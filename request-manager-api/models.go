@@ -15,6 +15,11 @@ type Ticket struct {
 	SenderUsername   string `json:"SenderUsername" db:"SenderUsername"`
 	AssigneeUsername string `json:"AssigneeUsername" db:"AssigneeUsername"`
 }
+type TicketFilter struct {
+	Status           string `json:"Status" db:"Status"`
+	SenderUsername   string `json:"SenderUsername" db:"SenderUsername"`
+	AssigneeUsername string `json:"AssigneeUsername" db:"AssigneeUsername"`
+}
 
 type UpdateTicketInput struct {
 	TicketID    *int    `json:"TicketID" db:"TicketID"`

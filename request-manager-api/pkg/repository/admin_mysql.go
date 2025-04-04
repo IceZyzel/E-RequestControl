@@ -146,6 +146,57 @@ func (r *AdminMysql) UpdateUser(UserID int, input Request_Manager.UpdateUserInpu
 
 	return nil
 }
+func (r *AdminMysql) GetFilteredTickets(filter Request_Manager.TicketFilter) ([]Request_Manager.Ticket, error) {
+	var tickets []Request_Manager.Ticket
+
+	query := `
+        SELECT 
+            t.TicketID, 
+            t.Title, 
+            t.Description, 
+            ts.Status,
+            t.CreatedAt,
+            t.UpdatedAt,
+            t.StatusID,
+            t.AssignedTo,
+            t.UserID,
+            u.Username AS SenderUsername,
+            a.Username AS AssigneeUsername
+        FROM Ticket t
+        JOIN TicketStatus ts ON t.StatusID = ts.StatusID
+        JOIN User u ON t.UserID = u.UserID
+        LEFT JOIN User a ON t.AssignedTo = a.UserID
+        WHERE 1=1`
+
+	var args []interface{}
+
+	if filter.SenderUsername != "" {
+		query += " AND u.Username LIKE ?"
+		args = append(args, "%"+filter.SenderUsername+"%")
+	}
+
+	if filter.AssigneeUsername == "unassigned" {
+		query += " AND t.AssignedTo IS NULL"
+	} else if filter.AssigneeUsername != "" {
+		query += " AND a.Username LIKE ?"
+		args = append(args, "%"+filter.AssigneeUsername+"%")
+	}
+
+	if filter.Status != "" {
+		query += " AND ts.Status = ? COLLATE utf8mb4_unicode_ci"
+		args = append(args, filter.Status)
+	}
+
+	query += " ORDER BY t.CreatedAt DESC"
+
+	err := r.db.Select(&tickets, query, args...)
+	if err != nil {
+		log.Printf("Error executing query: %v", err)
+		return nil, fmt.Errorf("database error: %v", err)
+	}
+
+	return tickets, nil
+}
 
 func (r *AdminMysql) BackupData(backupPath string) error {
 	if err := os.MkdirAll(filepath.Dir(backupPath), 0755); err != nil {

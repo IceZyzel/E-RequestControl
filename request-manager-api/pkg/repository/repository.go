@@ -33,6 +33,7 @@ type Admin interface {
 	GetAllUsers() ([]Request_Manager.User, error)
 	Delete(UserID int) error
 	UpdateUser(UserID int, input Request_Manager.UpdateUserInput, user Request_Manager.User) error
+	GetFilteredTickets(filter Request_Manager.TicketFilter) ([]Request_Manager.Ticket, error)
 	BackupData(backupPath string) error
 	RestoreData(backupPath multipart.File) error
 	ImportData(backupPath string) error
