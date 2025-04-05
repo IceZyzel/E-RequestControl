@@ -16,7 +16,7 @@ type Ticket interface {
 }
 type Notification interface {
 	GetAllUserNotification(userID int) ([]Request_Manager.Notification, error)
-	Create(notification Request_Manager.Notification) (int, error) //эта функция
+	Create(notification Request_Manager.Notification) (int, error)
 	Delete(notificationID int) error
 	GetAll() ([]Request_Manager.Notification, error)
 	MarkNotificationAsRead(notificationID, userID int) error
