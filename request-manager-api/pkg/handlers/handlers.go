@@ -16,34 +16,33 @@ func NewHandler(services *services.Service) *Handlers {
 }
 
 func CORSMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		allowedOrigins := []string{
-			"http://localhost:5173",
-			"http://localhost:3000",
-		}
+    return func(c *gin.Context) {
+        origin := c.GetHeader("Origin")
+        allowedOrigins := []string{
+            "http://frontend.local",
+            "http://api.frontend.local",
+            "http://localhost:5173",
+            "http://127.0.0.1",
+            "http://127.0.0.1:5173",
+        }
 
-		origin := c.GetHeader("Origin")
-		if contains(allowedOrigins, origin) {
-			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
-		} else {
-			c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173") // Default fallback
-		}
+        if contains(allowedOrigins, origin) {
+            c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+            c.Writer.Header().Set("Access-Control-Allow-Credentials", "true") // Добавлено
+            c.Writer.Header().Set("Vary", "Origin")
+        }
 
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+        c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, PUT, PATCH, POST, DELETE") // Исправлено
+        c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        c.Writer.Header().Set("Access-Control-Expose-Headers", "Authorization")
 
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+        if c.Request.Method == "OPTIONS" {
+            c.AbortWithStatus(http.StatusNoContent)
+            return
+        }
 
-		c.Writer.Header().Set("Access-Control-Expose-Headers", "Authorization")
-
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(http.StatusOK)
-			return
-		}
-
-		c.Next()
-	}
+        c.Next()
+    }
 }
 
 func contains(slice []string, item string) bool {
@@ -114,6 +113,9 @@ func (h *Handlers) InitRoutes() *gin.Engine {
 			data.GET("/export", h.exportData)
 			data.POST("/import", h.importData)
 		}
+		router.GET("/health", func(c *gin.Context) {
+			c.JSON(200, gin.H{"status": "ok"})
+		})
 	}
 
 	return router

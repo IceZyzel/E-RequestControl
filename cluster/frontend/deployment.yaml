@@ -5,21 +5,37 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: req-front # <- Этот лейбл должен совпадать с Service!
+      app: req-front
   template:
     metadata:
       labels:
-        app: req-front # <- И здесь тоже
+        app: req-front
     spec:
       containers:
         - name: req-front
-          image: zyzelq/req-front:v1
+          image: zyzelq/req-front:v9
+          envFrom:
+            - configMapRef:
+                name: frontend-config # Должен быть отступ в 4 пробела под configMapRef
           ports:
             - containerPort: 5173
           resources:
             requests:
-              cpu: 200m
-              memory: 512Mi
+              cpu: "200m"
+              memory: "512Mi"
             limits:
-              cpu: 1000m
-              memory: 2Gi
+              cpu: "1000m"
+              memory: "2Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+spec:
+  selector:
+    app: req-front
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5173
+  type: LoadBalancer
