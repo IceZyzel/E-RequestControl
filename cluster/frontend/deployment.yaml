@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: req-front
-          image: zyzelq/req-front:v10
+          image: zyzelq/req-front:v12
           envFrom:
             - configMapRef:
                 name: frontend-config # Должен быть отступ в 4 пробела под configMapRef
