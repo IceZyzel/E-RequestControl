@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: req-db
-          image: zyzelq/req-db:v2
+          image: zyzelq/req-db:cluster1
           ports:
             - containerPort: 3306 # Исправлено с 3308 на 3306
           env:

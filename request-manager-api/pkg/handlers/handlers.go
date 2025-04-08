@@ -4,6 +4,9 @@ import (
 	"net/http"
 	"request_manager_api/pkg/services"
 
+	"log"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,13 +26,14 @@ func CORSMiddleware() gin.HandlerFunc {
 			"http://localhost:5173",
 			"http://127.0.0.1",
 			"http://127.0.0.1:5173",
+			"0.0.0.0",
 		}
 
 		origin := c.GetHeader("Origin")
 		if contains(allowedOrigins, origin) {
 			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
 		} else {
-			c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1") // Default fallback
+			c.Writer.Header().Set("Access-Control-Allow-Origin", "0.0.0.0") // Default fallback
 		}
 
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
@@ -44,8 +48,12 @@ func CORSMiddleware() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusOK)
 			return
 		}
-
+		log.Println("---- Response Headers ----")
+		for k, v := range c.Writer.Header() {
+			log.Printf("%s: %s\n", k, strings.Join(v, ", "))
+		}
 		c.Next()
+
 	}
 }
 

@@ -11,9 +11,10 @@ spec:
       labels:
         app: req-back
     spec:
+      restartPolicy: Always
       containers:
         - name: req-back
-          image: zyzelq/req-back:v13
+          image: zyzelq/req-back:cluster6
           ports:
             - containerPort: 8000
           resources:
