@@ -1,0 +1,41 @@
+# frontend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: req-front
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: req-front
+  template:
+    metadata:
+      labels:
+        app: req-front
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: frontend
+          image: zyzelq/req-front:v2
+          ports:
+            - containerPort: 5173
+          resources:
+            limits:
+              memory: "1024Mi"
+              cpu: "1024m"
+---
+# frontend-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: req-front
+  namespace: default
+spec:
+  selector:
+    app: req-front
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5173
+  type: NodePort
