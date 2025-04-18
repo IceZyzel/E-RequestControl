@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"request_manager_api/pkg/services"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Handlers struct {
@@ -20,6 +21,12 @@ func CORSMiddleware() gin.HandlerFunc {
 		allowedOrigins := []string{
 			"http://localhost:5173",
 			"http://localhost:3000",
+			"127.0.0.1",
+			"http://127.0.0.1:",
+			"http://frontend.local",
+			// Продакшн-адреса фронтенда
+			"http://req-front-service",    // Имя сервиса фронтенда внутри Kubernetes
+			"http://req-front-service.default.svc.cluster.local",
 		}
 
 		if contains(allowedOrigins, origin) {
