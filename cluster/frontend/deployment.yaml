@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: req-front
-          image: zyzelq/req-front:v5
+          image: zyzelq/req-front:local
           resources:
             requests:
               cpu: "200m"

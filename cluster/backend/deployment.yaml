@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: req-back
-          image: zyzelq/req-back:v10
+          image: zyzelq/req-back:local
           resources:
             requests:
               cpu: "200m"
