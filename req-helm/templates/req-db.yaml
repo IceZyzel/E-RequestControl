@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: req-db
+spec:
+  selector:
+    matchLabels:
+      app: req-db
+  template:
+    metadata:
+      labels:
+        app: req-db
+    spec:
+      containers:
+        - name: req-db
+          image: "{{.Values.image.db.repository}}:{{.Values.image.db.tag}}"
+          resources: {{.Values.resources | toYaml | nindent 12}}
+          ports:
+            - containerPort: {{.Values.services.db.port}}
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: {{.Values.db.rootPassword | quote}}
+            - name: MYSQL_DATABASE
+              value: {{.Values.db.database | quote}}
+          volumeMounts:
+            - name: req-db-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: req-db-storage
+          persistentVolumeClaim:
+            claimName: req-db-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Values.services.db.name}}
+spec:
+  selector:
+    app: req-db
+  ports:
+    - port: {{.Values.services.db.port}}
+      targetPort: {{.Values.services.db.port}}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: req-db-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{.Values.db.pvc.storage}}
