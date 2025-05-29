@@ -27,6 +27,10 @@ func CORSMiddleware() gin.HandlerFunc {
 			// Продакшн-адреса фронтенда
 			"http://req-front-service",    // Имя сервиса фронтенда внутри Kubernetes
 			"http://req-front-service.default.svc.cluster.local",
+			"http://zyzel.de",
+			"http://zyzel.de/api",
+			"https://zyzel.de",
+			"https://zyzel.de/api",
 		}
 
 		if contains(allowedOrigins, origin) {
@@ -60,16 +64,18 @@ func (h *Handlers) InitRoutes() *gin.Engine {
 	router := gin.Default()
 	router.Use(CORSMiddleware())
 
-	auth := router.Group("/auth")
+	api := router.Group("/api")
 	{
-		auth.POST("/register", h.register)
-		auth.POST("/registerAdmin", h.registerAdmin)
-		auth.POST("/login", h.login)
-		auth.POST("/logout", h.logout)
-	}
+		// <-- сюда перемещаем auth
+		auth := api.Group("/auth")
+		{
+			auth.POST("/register", h.register)
+			auth.POST("/registerAdmin", h.registerAdmin)
+			auth.POST("/login", h.login)
+			auth.POST("/logout", h.logout)
+		}
 
-	api := router.Group("/api", h.userIdentity)
-	{
+		api.Use(h.userIdentity)
 		api.GET("/users", h.getAllUsers)
 		tickets := api.Group("/tickets")
 		{
@@ -120,3 +126,4 @@ func (h *Handlers) InitRoutes() *gin.Engine {
 
 	return router
 }
+

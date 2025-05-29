@@ -10,8 +10,8 @@ spec:
     - host: {{.Values.ingress.backendHost}}
       http:
         paths:
-          - path: /
-            pathType: Prefix
+          - path: /api
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: {{.Values.services.back.name}}

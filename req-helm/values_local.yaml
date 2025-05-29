@@ -41,5 +41,6 @@ ingress:
   enabled: true
   name: req-ingress
   className: nginx
+  backendpath: "/"
   backendHost: "api.frontend.local"
   frontendHost: "frontend.local"
