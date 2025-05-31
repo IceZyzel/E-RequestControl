@@ -6,6 +6,7 @@
         <i class="fas fa-sign-out-alt"></i> Вийти
       </button>
     </header>
+
     <!-- Users Section -->
     <section class="users-section" v-if="users.length > 0">
       <div class="section-header">
@@ -23,13 +24,13 @@
             <th>Юзернейм</th>
             <th>Пошта</th>
             <th>Роль</th>
-            <th>Час створення користувача</th>
-            <th>Час оновлення користувача</th>
+            <th>Час створення</th>
+            <th>Час оновлення</th>
             <th>Дії</th>
           </tr>
           </thead>
           <tbody>
-          <tr v-for="user in users" :key="user.UserID">
+          <tr v-for="user in paginatedUsers" :key="user.UserID">
             <td>{{ user.FirstName }}</td>
             <td>{{ user.LastName }}</td>
             <td>{{ user.Username }}</td>
@@ -39,8 +40,8 @@
                   {{ user.RoleID === 1 ? 'Адмін' : user.RoleID === 2 ? 'Користувач' : 'Невідома роль' }}
                 </span>
             </td>
-            <td>{{ user.CreatedAt }}</td>
-            <td>{{ user.UpdatedAt }}</td>
+            <td>{{ formatDate(user.CreatedAt) }}</td>
+            <td>{{ formatDate(user.UpdatedAt) }}</td>
             <td class="actions">
               <button class="edit-btn" @click="editUser(user)">
                 <i class="fas fa-edit"></i>
@@ -52,6 +53,17 @@
           </tr>
           </tbody>
         </table>
+        <div class="pagination-controls" v-if="totalUsersPages > 1">
+          <button class="pagination-btn" @click="prevUsersPage" :disabled="currentUsersPage === 1">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <span class="page-info">
+            Сторінка {{ currentUsersPage }} з {{ totalUsersPages }}
+          </span>
+          <button class="pagination-btn" @click="nextUsersPage" :disabled="currentUsersPage === totalUsersPages">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
       </div>
     </section>
     <div class="empty-state" v-else>
@@ -119,6 +131,7 @@
             <th>Призначено</th>
             <th>Відправник</th>
             <th>Створено</th>
+            <th>Оновлено</th>
             <th>Дії</th>
           </tr>
           </thead>
@@ -126,9 +139,9 @@
           <tr v-for="ticket in paginatedTickets" :key="ticket.TicketID">
             <td>{{ ticket.Title }}</td>
             <td class="ticket-description">
-              <span class="description-text">
-                {{ truncateDescription(ticket.Description, ticket.TicketID) }}
-              </span>
+                <span class="description-text">
+                  {{ truncateDescription(ticket.Description, ticket.TicketID) }}
+                </span>
               <button
                   v-if="ticket.Description && ticket.Description.length > 100"
                   class="show-more-btn"
@@ -138,13 +151,14 @@
               </button>
             </td>
             <td>
-              <span :class="['status-badge', getStatusClass(ticket.Status)]">
-                {{ ticket.Status }}
-              </span>
+                <span :class="['status-badge', getStatusClass(ticket.Status)]">
+                  {{ ticket.Status }}
+                </span>
             </td>
-            <td>{{ ticket.AssigneeUsername || 'Не призначено' }}</td>
+            <td>{{ ticket.AssigneeUsername }}</td>
             <td>{{ ticket.SenderUsername }}</td>
             <td>{{ formatDate(ticket.CreatedAt) }}</td>
+            <td>{{ formatDate(ticket.UpdatedAt) }}</td>
             <td class="actions">
               <button class="edit-btn" @click="editTicket(ticket)" title="Редагувати">
                 <i class="fas fa-edit"></i>
@@ -163,8 +177,8 @@
             <i class="fas fa-chevron-left"></i>
           </button>
           <span class="page-info">
-          Сторінка {{ currentPage }} з {{ totalPages }}
-        </span>
+            Сторінка {{ currentPage }} з {{ totalPages }}
+          </span>
           <button class="pagination-btn" @click="nextPage" :disabled="currentPage === totalPages">
             <i class="fas fa-chevron-right"></i>
           </button>
@@ -180,12 +194,11 @@
       </div>
     </section>
 
-
     <!-- Notifications Section -->
     <section class="notifications-section" v-if="notifications.length > 0">
       <h2>Сповіщення</h2>
       <div class="notifications-list">
-        <div v-for="notification in notifications" :key="notification.NotificationID" class="notification-item">
+        <div v-for="notification in paginatedNotifications" :key="notification.NotificationID" class="notification-item">
           <div class="notification-content">
             <p class="notification-message">{{ notification.Message }}</p>
             <span class="notification-time">{{ formatDate(notification.CreatedAt) }}</span>
@@ -194,7 +207,19 @@
             <i class="fas fa-trash-alt"></i>
           </button>
         </div>
+        <div class="pagination-controls" v-if="notifications.length > itemsPerPage">
+          <button class="pagination-btn" @click="prevNotificationsPage" :disabled="currentNotificationsPage === 1">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <span class="page-info">
+          Сторінка {{ currentNotificationsPage }} з {{ totalNotificationsPages }}
+        </span>
+          <button class="pagination-btn" @click="nextNotificationsPage" :disabled="currentNotificationsPage === totalNotificationsPages">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
       </div>
+
     </section>
     <div class="empty-state" v-else>
       <i class="fas fa-bell empty-icon"></i>
@@ -221,107 +246,132 @@
     </section>
 
     <!-- Create User Modal -->
-    <div v-if="showCreateUserModal" class="modal-overlay">
-      <div class="modal">
-        <div class="modal-header">
-          <h3>Створити нового користувача</h3>
-          <button class="close-btn" @click="showCreateUserModal = false">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <form @submit.prevent="submitCreateUser">
-            <div class="form-group">
-              <label>Ім'я</label>
-              <input v-model="newUser.FirstName" type="text" placeholder="Введіть ім'я" required />
-            </div>
-            <div class="form-group">
-              <label>Прізвище</label>
-              <input v-model="newUser.LastName" type="text" placeholder="Введіть прізвище" required />
-            </div>
-            <div class="form-group">
-              <label>Юзернейм</label>
-              <input v-model="newUser.Username" type="text" placeholder="Введіть юзернейм" required />
-            </div>
-            <div class="form-group">
-              <label>Email</label>
-              <input v-model="newUser.Email" type="email" placeholder="Введіть email" required />
-            </div>
-            <div class="form-group">
-              <label>Пароль</label>
-              <input v-model="newUser.Password" type="password" placeholder="Введіть пароль" required />
-            </div>
-            <div class="form-group">
-              <label>Роль</label>
-              <select v-model="newUser.RoleID" required>
-                <option value="2">Користувач</option>
-                <option value="1">Адміністратор</option>
-              </select>
-            </div>
-            <div class="form-actions">
-              <button type="button" class="cancel-btn" @click="showCreateUserModal = false">Скасувати</button>
-              <button type="submit" class="submit-btn">Створити</button>
-            </div>
-          </form>
+    <transition name="modal-fade">
+      <div v-if="showCreateUserModal" class="modal-overlay" @click.self="showCreateUserModal = false">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>Створити нового користувача</h3>
+            <button class="close-btn" @click="showCreateUserModal = false">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="submitCreateUser">
+              <div class="form-group">
+                <label>Ім'я</label>
+                <input v-model="newUser.FirstName" type="text" placeholder="Введіть ім'я" required />
+              </div>
+              <div class="form-group">
+                <label>Прізвище</label>
+                <input v-model="newUser.LastName" type="text" placeholder="Введіть прізвище" required />
+              </div>
+              <div class="form-group">
+                <label>Юзернейм</label>
+                <input v-model="newUser.Username" type="text" placeholder="Введіть юзернейм" required />
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input v-model="newUser.Email" type="email" placeholder="Введіть email" required />
+              </div>
+              <div class="form-group">
+                <div class="input-group">
+                  <label for="password">Пароль</label>
+                  <div class="password-wrapper">
+                    <input
+                        :type="isPasswordVisible ? 'text' : 'password'"
+                        v-model="newUser.Password"
+                        id="password"
+                        placeholder="Введіть пароль"
+                        required
+                        class="form-input"
+                    />
+                    <button
+                        type="button"
+                        @click="togglePasswordVisibility"
+                        class="eye-button"
+                        :class="{ 'active': isPasswordVisible }"
+                    >
+                      <i class="fas" :class="isPasswordVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Роль</label>
+                <select v-model="newUser.RoleID" required>
+                  <option value="2">Користувач</option>
+                  <option value="1">Адміністратор</option>
+                </select>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="cancel-btn" @click="showCreateUserModal = false">Скасувати</button>
+                <button type="submit" class="submit-btn">Створити</button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
-    </div>
+    </transition>
 
     <!-- Edit User Modal -->
-    <div v-if="editUserData" class="modal-overlay">
-      <div class="modal">
-        <div class="modal-header">
-          <h3>Редагувати користувача</h3>
-          <button class="close-btn" @click="editUserData = null">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <form @submit.prevent="submitEditUser">
-            <div class="form-group">
-              <label>Ім'я</label>
-              <input v-model="editUserData.FirstName" type="text" placeholder="Введіть ім'я" required />
-            </div>
-            <div class="form-group">
-              <label>Прізвище</label>
-              <input v-model="editUserData.LastName" type="text" placeholder="Введіть прізвище" required />
-            </div>
-            <div class="form-group">
-              <label>Юзернейм</label>
-              <input v-model="editUserData.Username" type="text" placeholder="Введіть юзернейм" required />
-            </div>
-            <div class="form-group">
-              <label>Роль</label>
-              <select v-model="editUserData.RoleID" required>
-                <option value="2">Користувач</option>
-                <option value="1">Адміністратор</option>
-              </select>
-            </div>
-            <div class="form-actions">
-              <button type="button" class="cancel-btn" @click="editUserData = null">Скасувати</button>
-              <button type="submit" class="submit-btn">Зберегти</button>
-            </div>
-          </form>
+    <transition name="modal-fade">
+      <div v-if="editUserData" class="modal-overlay" @click.self="editUserData = null">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>Редагувати користувача</h3>
+            <button class="close-btn" @click="editUserData = null">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="submitEditUser">
+              <div class="form-group">
+                <label>Ім'я</label>
+                <input v-model="editUserData.FirstName" type="text" placeholder="Введіть ім'я" required />
+              </div>
+              <div class="form-group">
+                <label>Прізвище</label>
+                <input v-model="editUserData.LastName" type="text" placeholder="Введіть прізвище" required />
+              </div>
+              <div class="form-group">
+                <label>Юзернейм</label>
+                <input v-model="editUserData.Username" type="text" placeholder="Введіть юзернейм" required />
+              </div>
+              <div class="form-group">
+                <label>Роль</label>
+                <select v-model="editUserData.RoleID" required>
+                  <option value="2">Користувач</option>
+                  <option value="1">Адміністратор</option>
+                </select>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="cancel-btn" @click="editUserData = null">Скасувати</button>
+                <button type="submit" class="submit-btn">Зберегти</button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
-    </div>
+    </transition>
 
     <!-- Confirmation Modal -->
-    <div v-if="confirmModal.show" class="modal-overlay">
-      <div class="confirm-modal">
-        <div class="modal-header">
-          <h3>Підтвердження дії</h3>
-        </div>
-        <div class="modal-body">
-          <p>Ви дійсно хочете видалити {{ confirmModal.type === 'user' ? 'користувача' :
-              confirmModal.type === 'ticket' ? 'тікет' : 'сповіщення' }} <strong>"{{ confirmModal.name }}"</strong>?</p>
-        </div>
-        <div class="modal-footer">
-          <button class="cancel-btn" @click="confirmModal.show = false">Скасувати</button>
-          <button class="confirm-btn" @click="executeDelete">Видалити</button>
+    <transition name="modal-fade">
+      <div v-if="confirmModal.show" class="modal-overlay" @click.self="confirmModal.show = false">
+        <div class="confirm-modal">
+          <div class="modal-header">
+            <h3>Підтвердження дії</h3>
+          </div>
+          <div class="modal-body">
+            <p>Ви дійсно хочете видалити {{ confirmModal.type === 'user' ? 'користувача' :
+                confirmModal.type === 'ticket' ? 'тікет' : 'сповіщення' }} <strong>"{{ confirmModal.name }}"</strong>?</p>
+          </div>
+          <div class="modal-footer">
+            <button class="cancel-btn" @click="confirmModal.show = false">Скасувати</button>
+            <button class="confirm-btn" @click="executeDelete">Видалити</button>
+          </div>
         </div>
       </div>
-    </div>
+    </transition>
   </div>
 </template>
 
@@ -331,7 +381,6 @@ import { adminApi } from "../api";
 import { format } from 'date-fns';
 import { useAuthStore } from '../store/auth';
 import { useRouter } from 'vue-router';
-
 export default {
   name: "AdminDashboard",
   setup() {
@@ -340,6 +389,7 @@ export default {
     const notifications = ref([]);
     const users = ref([]);
     const editUserData = ref(null);
+    const isPasswordVisible = ref(false);
     const showCreateUserModal = ref(false);
     const authStore = useAuthStore();
     const router = useRouter();
@@ -347,6 +397,12 @@ export default {
     const expandedDescriptions = ref({});
     const currentPage = ref(1);
     const itemsPerPage = ref(10);
+    const currentNotificationsPage = ref(1);
+    const currentUsersPage = ref(1);
+
+    const togglePasswordVisibility = () => {
+      isPasswordVisible.value = !isPasswordVisible.value;
+    };
 
     const filters = ref({
       sender: '',
@@ -388,7 +444,9 @@ export default {
             ? await adminApi.getFilteredTickets(filters.value)
             : await adminApi.getAllTickets();
 
-        tickets.value = response.data || [];
+        tickets.value = (response.data || []).sort((a, b) =>
+            new Date(b.CreatedAt) - new Date(a.CreatedAt)
+        );
         filteredTickets.value = [...tickets.value];
         currentPage.value = 1;
       } catch (error) {
@@ -425,11 +483,46 @@ export default {
       filters.value = {
         sender: null,
         assignee: null,
-        status: null
+        status: ''
       };
       await fetchTickets(false);
     };
-    // Pagination
+
+    const paginatedUsers = computed(() => {
+      const start = (currentUsersPage.value - 1) * itemsPerPage.value;
+      const end = start + itemsPerPage.value;
+      return users.value.slice(start, end);
+    });
+
+    const totalUsersPages = computed(() =>
+        Math.ceil(users.value.length / itemsPerPage.value)
+    );
+
+    const paginatedNotifications = computed(() => {
+      const start = (currentNotificationsPage.value - 1) * itemsPerPage.value;
+      const end = start + itemsPerPage.value;
+      return notifications.value.slice(start, end);
+    });
+
+    const totalNotificationsPages = computed(() =>
+        Math.ceil(notifications.value.length / itemsPerPage.value)
+    );
+
+    const nextUsersPage = () => {
+      if (currentUsersPage.value < totalUsersPages.value) currentUsersPage.value++;
+    };
+
+    const prevUsersPage = () => {
+      if (currentUsersPage.value > 1) currentUsersPage.value--;
+    };
+
+    const nextNotificationsPage = () => {
+      if (currentNotificationsPage.value < totalNotificationsPages.value) currentNotificationsPage.value++;
+    };
+
+    const prevNotificationsPage = () => {
+      if (currentNotificationsPage.value > 1) currentNotificationsPage.value--;
+    };
     const totalPages = computed(() =>
         Math.ceil(filteredTickets.value.length / itemsPerPage.value)
     );
@@ -449,13 +542,14 @@ export default {
     };
 
     const editTicket = (ticket) => {
-      // Implement ticket editing logic
       console.log('Editing ticket:', ticket);
     };
     const fetchNotifications = async () => {
       try {
         const response = await adminApi.getAllNotifications();
-        notifications.value = response.data || [];
+        notifications.value = (response.data || []).sort((a, b) =>
+            new Date(b.CreatedAt) - new Date(a.CreatedAt)
+        );
       } catch (error) {
         console.error("Помилка при завантаженні сповіщень:", error);
       }
@@ -464,7 +558,9 @@ export default {
     const fetchUsers = async () => {
       try {
         const response = await adminApi.getAllUsers();
-        users.value = response.data || [];
+        users.value = (response.data || []).sort((a, b) =>
+            new Date(b.CreatedAt) - new Date(a.CreatedAt)
+        );
       } catch (error) {
         console.error("Помилка при завантаженні користувачів:", error);
       }
@@ -688,6 +784,16 @@ export default {
       nextPage,
       prevPage,
       editTicket,
+      paginatedUsers,
+      currentUsersPage,
+      totalUsersPages,
+      nextUsersPage,
+      prevUsersPage,
+      paginatedNotifications,
+      currentNotificationsPage,
+      totalNotificationsPages,
+      nextNotificationsPage,
+      prevNotificationsPage,
 
       backupData,
       restoreData,
@@ -695,27 +801,15 @@ export default {
       importData,
 
       expandedDescriptions,
-      itemsPerPage
+      itemsPerPage,
+      isPasswordVisible,
+      togglePasswordVisibility
     };
   }
 };
 </script>
 
 <style scoped>
-
-:root {
-  --primary-color: #4361ee;
-  --secondary-color: #3f37c9;
-  --success-color: #4cc9f0;
-  --danger-color: #f72585;
-  --warning-color: #f8961e;
-  --info-color: #4895ef;
-  --light-color: #f8f9fa;
-  --dark-color: #212529;
-  --gray-color: #6c757d;
-  --border-color: #dee2e6;
-  --white: #ffffff;
-}
 
 * {
   box-sizing: border-box;
@@ -795,7 +889,6 @@ h2 {
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.95rem;
 }
 
 .data-table th {
@@ -842,7 +935,6 @@ h2 {
   display: inline-block;
   padding: 0.35rem 0.65rem;
   border-radius: 50px;
-  font-size: 0.8rem;
   font-weight: 500;
 }
 
@@ -975,7 +1067,6 @@ button i {
 
 .notifications-list {
   background: var(--white);
-  border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   padding: 1rem;
 }
@@ -1005,8 +1096,63 @@ button i {
   font-size: 0.85rem;
   color: var(--gray-color);
 }
+.password-wrapper {
+  position: relative;
+}
 
-/* Modal Styles */
+.eye-button {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--gray-color);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.eye-button:hover,
+.eye-button.active {
+  color: var(--primary-color);
+}
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+.modal-fade-enter-active .modal,
+.modal-fade-leave-active .modal {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.modal-fade-enter-from .modal,
+.modal-fade-leave-to .modal {
+  transform: translateY(-20px);
+  opacity: 0;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  border: 1px solid #ced4da !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #4361ee !important;
+  box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25) !important;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1020,6 +1166,20 @@ button i {
 
 }
 
+.modal-fade-enter-active .modal,
+.modal-fade-leave-active .modal,
+.modal-fade-enter-active .confirm-modal,
+.modal-fade-leave-active .confirm-modal {
+  transition: all 0.3s ease;
+}
+
+.modal-fade-enter-from .modal,
+.modal-fade-leave-to .modal,
+.modal-fade-enter-from .confirm-modal,
+.modal-fade-leave-to .confirm-modal {
+  transform: translateY(-20px);
+  opacity: 0;
+}
 .modal, .confirm-modal {
   background-color: white;
   border-radius: 10px;
@@ -1068,6 +1228,7 @@ button i {
 
 .form-group {
   margin-bottom: 1.25rem;
+  border-color: #1ebeff;
 }
 
 .form-group label {
@@ -1101,27 +1262,13 @@ button i {
   margin-top: 1.5rem;
 }
 
-.cancel-btn {
-  background-color: var(--gray-color);
-  color: var(--white);
-}
 
 .cancel-btn:hover {
-  background-color: #5a6268;
-}
-
-.submit-btn {
-  background-color: var(--primary-color);
-  color: var(--white);
+  background-color: #420001;
 }
 
 .submit-btn:hover {
-  background-color: var(--secondary-color);
-}
-
-.confirm-btn {
-  background-color: var(--danger-color);
-  color: var(--white);
+  background-color: #074200;
 }
 
 .confirm-btn:hover {
@@ -1227,17 +1374,8 @@ button i {
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background-color: var(--white);
-  border-top: 1px solid var(--border-color);
-}
-
-.pagination-btn {
-  padding: 0.5rem 0.8rem;
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
 }
 
 .pagination-btn:disabled {
@@ -1249,7 +1387,79 @@ button i {
   font-size: 0.9rem;
   color: var(--gray-color);
 }
+.pagination-btn {
+  padding: 0.5rem 1rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  min-width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
+
+.pagination-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+.page-info {
+  font-size: 1rem;
+  color: var(--dark-color);
+}
+
+.confirm-btn, .submit-btn {
+  background-color: #5a6268;
+  color: gray;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  border: none;
+  font-weight: 600;
+}
+button {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+button:disabled {
+  background-color: var(--gray-color) !important;
+  color: var(--light-color) !important;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.pagination-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+}
+
+.pagination-btn:disabled {
+  background-color: #e0e0e0 !important;
+  color: #9e9e9e !important;
+}
+
+.cancel-btn {
+  background-color: var(--gray-color) !important;
+  color: white !important;
+}
+
+.submit-btn, .confirm-btn {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+}
+
+.confirm-btn {
+  background-color: var(--danger-color) !important;
+}
+
+button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
 @media (max-width: 768px) {
   .admin-dashboard {
     padding: 1rem;
