@@ -29,6 +29,12 @@ jobs:
       - name: Install Node dependencies
         working-directory: request-manager-ui
         run: npm install
+# Setup java 11 to be default (sonar-scanner requirement as of 5.x)
+      - name: Set Java 11
+        uses: actions/setup-java@v3
+        with:
+         distribution: 'temurin' # See 'Supported distributions' for available options
+         java-version: '11'
 
       # Установка sonar-scanner
       - name: Setup SonarQube
