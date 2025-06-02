@@ -26,25 +26,51 @@
           </tr>
           </thead>
           <tbody>
-          <tr v-for="ticket in tickets" :key="ticket.TicketID">
+          <tr v-for="ticket in paginatedTickets" :key="ticket.TicketID">
             <td>{{ ticket.Title }}</td>
-            <td class="ticket-description">{{ ticket.Description }}</td>
-            <td>{{ ticket.Status }}</td>
-            <td>{{ ticket.AssigneeUsername }}</td>
+            <td class="ticket-description">
+                <span class="description-text">
+                  {{ truncateDescription(ticket.Description, ticket.TicketID) }}
+                </span>
+              <button
+                  v-if="ticket.Description && ticket.Description.length > 100"
+                  class="show-more-btn"
+                  @click="toggleDescription(ticket.TicketID)"
+              >
+                {{ expandedDescriptions[ticket.TicketID] ? 'Менше' : 'Більше' }}
+              </button>
+            </td>
+            <td>
+                <span :class="['status-badge', getStatusClass(ticket.Status)]">
+                  {{ ticket.Status }}
+                </span>
+            </td>
+            <td>{{ ticket.AssigneeUsername || 'Не призначено' }}</td>
             <td>{{ ticket.SenderUsername }}</td>
             <td>{{ formatDate(ticket.CreatedAt) }}</td>
             <td>{{ formatDate(ticket.UpdatedAt) }}</td>
             <td class="actions">
-              <button class="edit-btn" @click="editTicket(ticket)">
+              <button class="edit-btn" @click="editTicket(ticket)" title="Редагувати">
                 <i class="fas fa-edit"></i>
               </button>
-              <button class="delete-btn" @click="confirmDelete('ticket', ticket.TicketID, ticket.Title)">
+              <button class="delete-btn" @click="confirmDelete('ticket', ticket.TicketID, ticket.Title)" title="Видалити">
                 <i class="fas fa-trash-alt"></i>
               </button>
             </td>
           </tr>
           </tbody>
         </table>
+        <div class="pagination-controls" v-if="totalPages > 1">
+          <button class="pagination-btn" @click="prevPage" :disabled="currentPage === 1">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <span class="page-info">
+            Сторінка {{ currentPage }} з {{ totalPages }}
+          </span>
+          <button class="pagination-btn" @click="nextPage" :disabled="currentPage === totalPages">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
       </div>
     </section>
     <div class="empty-state" v-else>
@@ -54,20 +80,30 @@
 
     <!-- Notifications Section -->
     <section class="notifications-section" v-if="notifications.length > 0">
-      <div class="section-header">
-        <h2>Сповіщення</h2>
-      </div>
+      <h2>Сповіщення</h2>
       <div class="notifications-list">
-        <div v-for="notification in notifications" :key="notification.NotificationID" class="notification-item">
+        <div v-for="notification in paginatedNotifications" :key="notification.NotificationID" class="notification-item">
           <div class="notification-content">
             <p class="notification-message">{{ notification.Message }}</p>
             <span class="notification-time">{{ formatDate(notification.CreatedAt) }}</span>
           </div>
-          <button class="mark-read-btn" @click="markAsRead(notification.NotificationID)">
-            <i class="fas fa-check"></i> Позначити прочитаним
+          <button class="delete-btn small" @click="confirmDelete('notification', notification.NotificationID, 'сповіщення')">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </div>
+        <div class="pagination-controls" v-if="notifications.length > itemsPerPage">
+          <button class="pagination-btn" @click="prevNotificationsPage" :disabled="currentNotificationsPage === 1">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <span class="page-info">
+          Сторінка {{ currentNotificationsPage }} з {{ totalNotificationsPages }}
+        </span>
+          <button class="pagination-btn" @click="nextNotificationsPage" :disabled="currentNotificationsPage === totalNotificationsPages">
+            <i class="fas fa-chevron-right"></i>
           </button>
         </div>
       </div>
+
     </section>
     <div class="empty-state" v-else>
       <i class="fas fa-bell empty-icon"></i>
@@ -75,7 +111,8 @@
     </div>
 
     <!-- Create Ticket Modal -->
-    <div v-if="showCreateTicketModal" class="modal-overlay">
+    <transition name="modal-fade">
+    <div v-if="showCreateTicketModal" class="modal-overlay" @click.self="showCreateTicketModal= false" >
       <div class="modal">
         <div class="modal-header">
           <h3>Створити новий тікет</h3>
@@ -109,9 +146,11 @@
         </div>
       </div>
     </div>
+    </transition>
 
     <!-- Edit Ticket Modal -->
-    <div v-if="editTicketData" class="modal-overlay">
+    <transition name="modal-fade">
+    <div v-if="editTicketData" class="modal-overlay" @click.self="editTicketData = null">
       <div class="modal">
         <div class="modal-header">
           <h3>Редагувати тікет</h3>
@@ -145,9 +184,11 @@
         </div>
       </div>
     </div>
+    </transition>
 
     <!-- Confirmation Modal -->
-    <div v-if="confirmModal.show" class="modal-overlay">
+    <transition name="modal-fade">
+    <div v-if="confirmModal.show" class="modal-overlay" @click.self="confirmModal.show = false">
       <div class="confirm-modal">
         <div class="modal-header">
           <h3>Підтвердження дії</h3>
@@ -161,7 +202,7 @@
         </div>
       </div>
     </div>
-
+    </transition>
     <!-- Create Ticket Button -->
     <button class="create-btn floating-btn" @click="showCreateTicketModal = true">
       <i class="fas fa-plus"></i> Додати тікет
@@ -170,7 +211,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { requestApi, notificationApi } from "../api";
 import { useAuthStore } from "../store/auth";
 import { format } from 'date-fns';
@@ -180,10 +221,14 @@ export default {
   name: "TicketDashboard",
   setup() {
     const tickets = ref([]);
+    const currentPage = ref(1);
     const notifications = ref([]);
     const users = ref([]);
     const authStore = useAuthStore();
     const router = useRouter();
+    const expandedDescriptions = ref({});
+    const itemsPerPage = ref(10);
+    const currentNotificationsPage = ref(1);
 
     const newTicket = ref({
       Title: '',
@@ -217,28 +262,75 @@ export default {
     const fetchTickets = async () => {
       try {
         const response = await requestApi.getUserTickets();
-        tickets.value = response.data || [];
+        tickets.value = (response.data || []).sort((a, b) =>
+            new Date(b.CreatedAt) - new Date(a.CreatedAt)
+        );
       } catch (error) {
         console.error("Помилка при завантаженні тікетів:", error);
+        tickets.value = [];
       }
+    };
+    const truncateDescription = (description, ticketId) => {
+      if (!description) return '';
+      const shouldTruncate = description.length > 100 && !expandedDescriptions.value[ticketId];
+      return shouldTruncate ? `${description.substring(0, 100)}...` : description;
+    };
+    const toggleDescription = (ticketId) => {
+      expandedDescriptions.value = {
+        ...expandedDescriptions.value,
+        [ticketId]: !expandedDescriptions.value[ticketId]
+      };
+    };
+
+    const paginatedTickets = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage.value;
+      const end = start + itemsPerPage.value;
+      return tickets.value.slice(start, end);
+    });
+
+    const nextPage = () => {
+      if (currentPage.value < totalPages.value) currentPage.value++;
+    };
+
+    const totalPages = computed(() => Math.ceil(tickets.value.length / itemsPerPage.value));
+
+    const prevPage = () => {
+      if (currentPage.value > 1) currentPage.value--;
     };
 
     const fetchNotifications = async () => {
       try {
         const response = await notificationApi.getUserNotifications();
-        notifications.value = response.data || [];
+        notifications.value = (response.data || []).sort((a, b) =>
+            new Date(b.CreatedAt) - new Date(a.CreatedAt)
+        );
       } catch (error) {
         console.error("Помилка при завантаженні сповіщень:", error);
+        notifications.value = [];
       }
     };
+    const paginatedNotifications = computed(() => {
+      const start = (currentNotificationsPage.value - 1) * itemsPerPage.value;
+      const end = start + itemsPerPage.value;
+      return notifications.value.slice(start, end);
+    });
 
+    const totalNotificationsPages = computed(() =>
+        Math.ceil(notifications.value.length / itemsPerPage.value)
+    );
+    const nextNotificationsPage = () => {
+      if (currentNotificationsPage.value < totalNotificationsPages.value) currentNotificationsPage.value++;
+    };
+    const prevNotificationsPage = () => {
+      if (currentNotificationsPage.value > 1) currentNotificationsPage.value--;
+    };
     const confirmDelete = (type, id, name) => {
       confirmModal.value = {
         show: true,
         type,
         id,
         name,
-        callback: deleteTicket
+        callback: type === 'ticket' ? deleteTicket : deleteNotification
       };
     };
 
@@ -252,6 +344,13 @@ export default {
       }
     };
 
+    const getStatusClass = (status) => {
+      switch (status) {
+        case 'Новий': return 'status-new';
+        case 'Оновлено': return 'status-in-progress';
+        default: return '';
+      }
+    };
     const deleteTicket = async (ticketID) => {
       try {
         await requestApi.deleteTicket(ticketID);
@@ -260,7 +359,10 @@ export default {
         console.error("Помилка при видаленні тікета:", error);
       }
     };
-
+    const deleteNotification = async (notificationID) => {
+      await notificationApi.markAsRead(notificationID);
+      notifications.value = notifications.value.filter(notification => notification.NotificationID !== notificationID);
+    };
     const addTicket = async () => {
       try {
         await requestApi.createTicket(newTicket.value);
@@ -281,8 +383,10 @@ export default {
       try {
         await requestApi.updateTicket(editTicketData.value.TicketID, editTicketData.value);
         editTicketData.value = null;
-        await fetchTickets();
-        await fetchNotifications();
+        await Promise.all([
+          fetchTickets(),
+          fetchNotifications()
+        ]);
       } catch (error) {
         console.error("Помилка при оновленні тікета:", error);
       }
@@ -319,7 +423,23 @@ export default {
       addTicket,
       editTicket,
       updateTicket,
-      markAsRead
+      markAsRead,
+
+      paginatedNotifications,
+      nextNotificationsPage,
+      prevPage,
+      nextPage,
+      paginatedTickets,
+      currentPage,
+      totalPages,
+      truncateDescription,
+      toggleDescription,
+      getStatusClass,
+      expandedDescriptions,
+      currentNotificationsPage,
+      totalNotificationsPages,
+      prevNotificationsPage,
+      itemsPerPage
     };
   }
 };
@@ -407,7 +527,6 @@ h2 {
   color: var(--gray-color);
   font-size: 1.1rem;
 }
-
 .table-container {
   overflow-x: auto;
   background: var(--white);
@@ -419,7 +538,6 @@ h2 {
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.95rem;
 }
 
 .data-table th {
@@ -430,10 +548,11 @@ h2 {
   font-weight: 500;
 }
 
+.data-table th,
 .data-table td {
-  padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
-  vertical-align: middle;
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .data-table tr:last-child td {
@@ -448,7 +567,6 @@ h2 {
   display: inline-block;
   padding: 0.35rem 0.65rem;
   border-radius: 50px;
-  font-size: 0.8rem;
   font-weight: 500;
 }
 
@@ -528,7 +646,19 @@ button i {
   padding: 0.4rem 0.6rem;
 }
 
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  gap: 1rem;
+  background-color: #f8f9fa;
+}
 
+.page-info {
+  font-size: 0.9rem;
+  color: var(--gray-color);
+}
 .notifications-list {
   background: var(--white);
   border-radius: 8px;
@@ -670,7 +800,16 @@ button i {
   background-color: var(--primary-color);
   color: var(--white);
 }
-
+.show-more-btn {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.5rem;
+  margin-left: 0.5rem;
+  white-space: nowrap;
+}
 .submit-btn:hover {
   background-color: var(--secondary-color);
 }
@@ -692,11 +831,13 @@ button i {
   gap: 1rem;
 }
 
+.data-table tr:last-child td {
+  border-bottom: none;
+}
 
 .ticket-description {
-  white-space: normal;
-  word-break: break-word;
   max-width: 300px;
+  word-break: break-word;
 }
 
 .mark-read-btn {
@@ -725,7 +866,7 @@ textarea {
   border-radius: 6px;
   font-size: 1rem;
   transition: border-color 0.2s;
-  resize: vertical;
+  resize: none;
 }
 
 textarea:focus {
@@ -753,6 +894,62 @@ textarea:focus {
 
 .logout-btn i {
   font-size: 1.1rem;
+}
+
+.pagination-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+}
+
+.pagination-btn:disabled {
+  background-color: #e0e0e0 !important;
+  color: #9e9e9e !important;
+}
+
+.cancel-btn {
+  background-color: var(--gray-color) !important;
+  color: white !important;
+}
+
+.submit-btn, .confirm-btn {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+}
+
+.confirm-btn {
+  background-color: var(--danger-color) !important;
+}
+
+button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+button:disabled {
+  background-color: var(--gray-color) !important;
+  color: var(--light-color) !important;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+.modal-fade-enter-active .modal,
+.modal-fade-leave-active .modal {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.modal-fade-enter-from .modal,
+.modal-fade-leave-to .modal {
+  transform: translateY(-20px);
+  opacity: 0;
 }
 @media (max-width: 768px) {
   .dashboard {
