@@ -53,7 +53,7 @@ jobs:
             -Dsonar.host.url=${{ secrets.SONAR_URL }} \
             -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
             -Dsonar.organization=req-sonar \
-            -Dsonar.projectKey=req-sonar_req-app \
+            -Dsonar.projectKey=req-app \
             -Dsonar.sources=request-manager-api,request-manager-ui \
             -Dsonar.language=go \
             -Dsonar.inclusions=**/*.go,**/*.js,**/*.vue \
