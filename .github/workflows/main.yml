@@ -49,7 +49,7 @@ jobs:
       # Запуск анализа
       - name: SonarQube Scan
         run: |
-          sonar-scanner -X \
+          sonar-scanner \
             -Dsonar.host.url=${{ secrets.SONAR_URL }} \
             -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
