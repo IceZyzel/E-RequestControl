@@ -33,14 +33,21 @@ jobs:
       # Установка sonar-scanner
       - name: Setup SonarQube
         uses: warchant/setup-sonar-scanner@v7
+        
+      - name: Debug Sonar variables
+        run: |
+          echo "SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}"
+          echo "SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}"
+          echo "SONAR_URL: ${{ secrets.SONAR_URL }}"
 
       # Запуск анализа
       - name: SonarQube Scan
-        run: sonar-scanner -X
-            -Dsonar.host.url=${{ secrets.SONAR_URL }} 
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }} 
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} 
-            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} 
+        run: |
+          sonar-scanner \
+            -Dsonar.host.url=${{ secrets.SONAR_URL }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
             -Dsonar.sources=request-manager-api,request-manager-ui \
             -Dsonar.language=go \
             -Dsonar.inclusions=**/*.go,**/*.js,**/*.vue \
