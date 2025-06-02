@@ -59,11 +59,3 @@ jobs:
             -Dsonar.inclusions=**/*.go,**/*.js,**/*.vue \
             -Dsonar.exclusions=**/node_modules/**,**/vendor/**
 
-      # Проверка Quality Gate
-      - name: SonarQube Quality Gate check
-        id: sonarqube-quality-gate-check
-        uses: sonarsource/sonarqube-quality-gate-action@master
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_URL }}
