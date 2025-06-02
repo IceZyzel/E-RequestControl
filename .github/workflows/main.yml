@@ -38,7 +38,7 @@ jobs:
 
       # Установка sonar-scanner
       - name: Setup SonarQube
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: warchant/setup-sonar-scanner@v7
 
       - name: Debug Sonar variables
         run: |
