@@ -1,0 +1,57 @@
+name: req actions
+
+on: workflow_dispatch
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: e-requestcontrol
+  EKS_CLUSTER: e-requestcontrol-eks
+
+jobs:
+  Testing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code checkout
+        uses: actions/checkout@v4
+
+      # Установка Go
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22' # или твоя нужная версия
+
+      # Установка Node.js (для Vue.js)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # или твоя нужная версия
+
+      - name: Install Node dependencies
+        working-directory: request-manager-ui
+        run: npm install
+
+      # Установка sonar-scanner
+      - name: Setup SonarQube
+        uses: warchant/setup-sonar-scanner@v7
+
+      # Запуск анализа
+      - name: SonarQube Scan
+        run: |
+          sonar-scanner \
+            -Dsonar.host.url=${{ secrets.SONAR_URL }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.organization=${{ secrets.SONAR_ORGANISATION }} \
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
+            -Dsonar.sources=request-manager-api,request-manager-ui \
+            -Dsonar.language=go \
+            -Dsonar.inclusions=**/*.go,**/*.js,**/*.vue \
+            -Dsonar.exclusions=**/node_modules/**,**/vendor/**
+
+      # Проверка Quality Gate
+      - name: SonarQube Quality Gate check
+        id: sonarqube-quality-gate-check
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_URL }}
