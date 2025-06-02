@@ -50,8 +50,8 @@ jobs:
       - name: SonarQube Scan
         run: |
           sonar-scanner -X \
-            -Dsonar.host.url=${{ secrets.SONAR_URL }} \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=33a58f2ac246fa1a53f0f0d62635e4f9fce5ff2c \
             -Dsonar.organization=req-sonar \
             -Dsonar.projectKey=req-app \
             -Dsonar.sources=request-manager-api,request-manager-ui \
@@ -65,5 +65,5 @@ jobs:
         uses: sonarsource/sonarqube-quality-gate-action@master
         timeout-minutes: 5
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_URL }}
+          SONAR_TOKEN: 33a58f2ac246fa1a53f0f0d62635e4f9fce5ff2c
+          SONAR_HOST_URL: https://sonarcloud.io
