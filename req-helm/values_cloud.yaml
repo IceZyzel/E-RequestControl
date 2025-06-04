@@ -41,5 +41,5 @@ ingress:
   enabled: true
   name: req-ingress
   className: nginx
-  backendHost: "zyzel.de"
-  frontendHost: "zyzel.de"
+  backendHost: "www.zyzel.de"
+  frontendHost: "www.zyzel.de"

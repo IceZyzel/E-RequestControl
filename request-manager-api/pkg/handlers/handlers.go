@@ -31,6 +31,10 @@ func CORSMiddleware() gin.HandlerFunc {
 			"http://zyzel.de/api",
 			"https://zyzel.de",
 			"https://zyzel.de/api",
+			"http://www.zyzel.de/api",
+			"http://www.zyzel.de",
+			"https://www.zyzel.de/api",
+			"https://www.zyzel.de",
 		}
 
 		if contains(allowedOrigins, origin) {
