@@ -4,7 +4,9 @@ on: workflow_dispatch
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: e-requestcontrol
+  REPOSITORY_FRONTEND: e-requestcontrol-frontend
+  REPOSITORY_BACKEND: e-requestcontrol-backend
+  REPOSITORY_DB: e-requestcontrol-db
   EKS_CLUSTER: e-requestcontrol-eks
 
 jobs:
@@ -59,3 +61,45 @@ jobs:
             -Dsonar.inclusions=**/*.go,**/*.js,**/*.vue \
             -Dsonar.exclusions=**/node_modules/**,**/vendor/**
 
+  BUILD_AND_PUBLISH:   
+    needs: Testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code checkout
+        uses: actions/checkout@v4
+
+      - name: Push Frontend
+        uses: appleboy/docker-ecr-action@master
+        with:
+          access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          registry: ${{ secrets.ECR_FRONTEND }}
+          repo: ${{ env.REPOSITORY_FRONTEND }}
+          region: ${{ env.AWS_REGION }}
+          tags: latest,${{ github.run_number }}
+          dockerfile: request-manager-ui/dockerfile
+          context: ./frontend
+
+      - name: Push Backend
+        uses: appleboy/docker-ecr-action@master
+        with:
+          access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          registry: ${{ secrets.ECR_BACKEND }}
+          repo: ${{ env.REPOSITORY_BACKEND }}
+          region: ${{ env.AWS_REGION }}
+          tags: latest,${{ github.run_number }}
+          dockerfile: request-manager-api/dockerfile
+          context: ./backend
+
+      - name: Push DB
+        uses: appleboy/docker-ecr-action@master
+        with:
+          access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          registry: ${{ secrets.ECR_DB }}
+          repo: ${{ env.REPOSITORY_DB }}
+          region: ${{ env.AWS_REGION }}
+          tags: latest,${{ github.run_number }}
+          dockerfile: request-manager-database/dockerfile
+          context: ./database
