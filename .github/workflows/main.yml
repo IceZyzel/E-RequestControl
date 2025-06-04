@@ -137,5 +137,5 @@ jobs:
           #config-files: .github/values/dev.yaml
           chart-path: ./req-helm
           namespace: default
-          values: req-helm/values_cloud.yaml
+          config-files: req-helm/values_cloud.yaml
           name: req-helm    
