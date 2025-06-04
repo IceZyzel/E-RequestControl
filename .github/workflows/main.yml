@@ -78,7 +78,7 @@ jobs:
           region: ${{ env.AWS_REGION }}
           tags: latest,${{ github.run_number }}
           dockerfile: request-manager-ui/dockerfile
-          context: ./frontend
+          context: ./request-manager-ui
 
       - name: Push Backend
         uses: appleboy/docker-ecr-action@master
@@ -90,7 +90,7 @@ jobs:
           region: ${{ env.AWS_REGION }}
           tags: latest,${{ github.run_number }}
           dockerfile: request-manager-api/dockerfile
-          context: ./backend
+          context: ./request-manager-api
 
       - name: Push DB
         uses: appleboy/docker-ecr-action@master
@@ -102,4 +102,4 @@ jobs:
           region: ${{ env.AWS_REGION }}
           tags: latest,${{ github.run_number }}
           dockerfile: request-manager-database/dockerfile
-          context: ./database
+          context: ./request-manager-database
