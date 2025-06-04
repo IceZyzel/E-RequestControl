@@ -73,7 +73,7 @@ jobs:
         with:
           access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          registry: ${{ secrets.ECR_FRONTEND }}
+          registry: ${{ secrets.REGISTRY }}
           repo: e-requestcontrol-frontend
           region: ${{ env.AWS_REGION }}
           tags: latest,${{ github.run_number }}
@@ -85,7 +85,7 @@ jobs:
         with:
           access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          registry: ${{ secrets.ECR_BACKEND }}
+          registry: ${{ secrets.REGISTRY }}
           repo: e-requestcontrol-backend
           region: ${{ env.AWS_REGION }}
           tags: latest,${{ github.run_number }}
@@ -97,7 +97,7 @@ jobs:
         with:
           access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          registry: ${{ secrets.ECR_DB }}
+          registry: ${{ secrets.REGISTRY }}
           repo: e-requestcontrol-db
           region: ${{ env.AWS_REGION }}
           tags: latest,${{ github.run_number }}
