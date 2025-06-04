@@ -74,7 +74,7 @@ jobs:
           access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           registry: ${{ secrets.REGISTRY }}
-          repo: e-requestcontrol-frontend
+          repo: ${{ env.REPOSITORY_FRONTEND }}
           region: ${{ env.AWS_REGION }}
           tags: latest,${{ github.run_number }}
           dockerfile: request-manager-ui/dockerfile
@@ -86,7 +86,7 @@ jobs:
           access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           registry: ${{ secrets.REGISTRY }}
-          repo: e-requestcontrol-backend
+          repo: ${{ env.REPOSITORY_BACKEND }}
           region: ${{ env.AWS_REGION }}
           tags: latest,${{ github.run_number }}
           dockerfile: request-manager-api/dockerfile
@@ -98,7 +98,7 @@ jobs:
           access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           registry: ${{ secrets.REGISTRY }}
-          repo: e-requestcontrol-db
+          repo: ${{ env.REPOSITORY_DB }}
           region: ${{ env.AWS_REGION }}
           tags: latest,${{ github.run_number }}
           dockerfile: request-manager-database/dockerfile
