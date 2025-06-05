@@ -25,7 +25,7 @@ kind: Service
 metadata:
   name: {{.Values.services.front.name}}
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app: req-front
   ports:
