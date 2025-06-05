@@ -6,7 +6,7 @@ image:
     tag: latest
   front:
     repository: 529088291614.dkr.ecr.us-east-1.amazonaws.com/e-requestcontrol-frontend
-    tag: testlocal2
+    tag: latest
   db:
     repository: 529088291614.dkr.ecr.us-east-1.amazonaws.com/e-requestcontrol-db
     tag: latest
