@@ -1,42 +1,42 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{.Values.ingress.name}}
+  name: {{ .Values.ingress.name }}
   annotations:
-    # Основные аннотации для ALB + HTTPS
     kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
-    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:529088291614:certificate/99698458-3848-4cd0-a30d-5fbf7c961ddd"  # Замени!
+    alb.ingress.kubernetes.io/certificate-arn: "{{ .Values.ingress.certificateArn }}"
     alb.ingress.kubernetes.io/ssl-policy: "ELBSecurityPolicy-TLS-1-2-2017-01"
     alb.ingress.kubernetes.io/actions.ssl-redirect: '{"Type": "redirect", "RedirectConfig": { "Protocol": "HTTPS", "Port": "443", "StatusCode": "HTTP_301"}}'
 spec:
-  ingressClassName: {{.Values.ingress.className}}
+  ingressClassName: {{ .Values.ingress.className }}
   rules:
-    - host: {{.Values.ingress.backendHost}}
+    - host: {{ .Values.ingress.backendHost }}
       http:
         paths:
           - path: /api
             pathType: Prefix
             backend:
               service:
-                name: {{.Values.services.back.name}}
+                name: {{ .Values.services.back.name }}
                 port:
-                  number: {{.Values.services.back.port}}
+                  number: {{ .Values.services.back.port }}
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: ssl-redirect  # Авторедирект HTTP -> HTTPS
-                port: use-annotation
-    - host: {{.Values.ingress.frontendHost}}
+                name: ssl-redirect
+                port:
+                  name: use-annotation
+    - host: {{ .Values.ingress.frontendHost }}
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: {{.Values.services.front.name}}
+                name: {{ .Values.services.front.name }}
                 port:
-                  number: {{.Values.services.front.port}}
+                  number: {{ .Values.services.front.port }}
