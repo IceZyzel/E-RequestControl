@@ -40,7 +40,7 @@ services:
 ingress:
   enabled: true
   name: req-ingress
-  className: nginx
+  className: alb
   backendHost: "www.zyzel.de"
   frontendHost: "www.zyzel.de"
   certificateArn: "arn:aws:acm:us-east-1:529088291614:certificate/99698458-3848-4cd0-a30d-5fbf7c961ddd"
