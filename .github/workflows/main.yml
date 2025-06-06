@@ -153,16 +153,19 @@ jobs:
       - name: Print config file
         run: cat ~/.kube/config
 
-      - name: Deploy Prometheus stack
+      - name: Deploy Prometheus and Loki stack
         run: |
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo add grafana https://grafana.github.io/helm-charts
           helm repo update
-          helm upgrade --install prometheus prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace
+          helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
+            --namespace monitoring --create-namespace
           helm upgrade --install loki grafana/loki-stack --namespace monitoring \
             --set promtail.enabled=true \
             --set grafana.enabled=false \
             --set loki.persistence.enabled=true \
             --set loki.persistence.size=1Gi
+
 
       - name: Login to ECR
         run: |
