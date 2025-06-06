@@ -24,8 +24,8 @@ func CORSMiddleware() gin.HandlerFunc {
 			"127.0.0.1",
 			"http://127.0.0.1:",
 			"http://frontend.local",
-			// Продакшн-адреса фронтенда
-			"http://req-front-service",    // Имя сервиса фронтенда внутри Kubernetes
+			"http://localhost:5173/api",
+			"http://req-front-service",
 			"http://req-front-service.default.svc.cluster.local",
 			"http://zyzel.de",
 			"http://zyzel.de/api",
@@ -70,7 +70,6 @@ func (h *Handlers) InitRoutes() *gin.Engine {
 
 	api := router.Group("/api")
 	{
-		// <-- сюда перемещаем auth
 		auth := api.Group("/auth")
 		{
 			auth.POST("/register", h.register)
@@ -94,39 +93,38 @@ func (h *Handlers) InitRoutes() *gin.Engine {
 			notifications.DELETE("/:notificationID", h.markNotificationAsRead)
 		}
 	}
+		admin := router.Group("api/admin", h.userIdentity, h.adminRequired)
+		{
+			adminTickets := admin.Group("/tickets")
+			{
+				adminTickets.GET("/", h.getTickets)
+				adminTickets.GET("/:ticketID", h.getTicketByID)
+				adminTickets.DELETE("/:ticketID", h.adminDeleteTicket)
+			}
+			adminNotifications := admin.Group("/notifications")
+			{
+				adminNotifications.GET("/", h.getAllNotifications)
+				adminNotifications.POST("/", h.createNotification)
+				adminNotifications.DELETE("/:notificationID", h.deleteNotification)
+			}
 
-	admin := router.Group("/admin", h.userIdentity, h.adminRequired)
-	{
-		adminTickets := admin.Group("/tickets")
-		{
-			adminTickets.GET("/", h.getTickets)
-			adminTickets.GET("/:ticketID", h.getTicketByID)
-			adminTickets.DELETE("/:ticketID", h.adminDeleteTicket)
-		}
-		adminNotifications := admin.Group("/notifications")
-		{
-			adminNotifications.GET("/", h.getAllNotifications)
-			adminNotifications.POST("/", h.createNotification)
-			adminNotifications.DELETE("/:notificationID", h.deleteNotification)
-		}
+			users := admin.Group("/users")
+			{
+				users.GET("/", h.getAllUsers)
+				users.POST("/", h.createUser)
+				users.GET("/:userID", h.getUserByID)
+				users.PUT("/:userID", h.updateUser)
+				users.DELETE("/:userID", h.deleteUser)
+			}
 
-		users := admin.Group("/users")
-		{
-			users.GET("/", h.getAllUsers)
-			users.POST("/", h.createUser)
-			users.GET("/:userID", h.getUserByID)
-			users.PUT("/:userID", h.updateUser)
-			users.DELETE("/:userID", h.deleteUser)
+			data := admin.Group("/data")
+			{
+				data.POST("/backup", h.backupData)
+				data.POST("/restore", h.restoreData)
+				data.GET("/export", h.exportData)
+				data.POST("/import", h.importData)
+			}
 		}
-
-		data := admin.Group("/data")
-		{
-			data.POST("/backup", h.backupData)
-			data.POST("/restore", h.restoreData)
-			data.GET("/export", h.exportData)
-			data.POST("/import", h.importData)
-		}
-	}
 
 	return router
 }

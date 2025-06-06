@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { jwtDecode } from 'jwt-decode';
 import Login from '../views/Login.vue';
 import Registration from '../views/Registration.vue';
-import RegisterAdmin from '../views/RegisterAdmin.vue';
 import Dashboard from "../views/Dashboard.vue";
 import AdminDashboard from "../views/AdminDashboard.vue";
 
@@ -16,11 +15,6 @@ const routes = [
     {
         path: '/register',
         component: Registration,
-        meta: { requiresGuest: true }
-    },
-    {
-        path: '/registerAdmin',
-        component: RegisterAdmin,
         meta: { requiresGuest: true }
     },
     {

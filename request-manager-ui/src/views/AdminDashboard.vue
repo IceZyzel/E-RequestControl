@@ -1,5 +1,6 @@
 <template>
   <div class="admin-dashboard">
+    <div class="admin-dashboard-card">
     <header class="admin-header">
       <h1>Адмін Панель Управління</h1>
       <button class="logout-btn" @click="authStore.logout()">
@@ -80,6 +81,16 @@
       <!-- Filter Controls -->
       <div class="ticket-filters">
         <div class="filter-group">
+        <label for="assignee-filter">Призначено:</label>
+        <input
+            id="assignee-filter"
+            v-model="filters.assignee"
+            type="text"
+            placeholder="Фільтр по призначеному"
+            @input="applyFilters"
+        >
+      </div>
+        <div class="filter-group">
           <label for="sender-filter">Відправник:</label>
           <input
               id="sender-filter"
@@ -89,18 +100,6 @@
               @input="applyFilters"
           >
         </div>
-
-        <div class="filter-group">
-          <label for="assignee-filter">Призначено:</label>
-          <input
-              id="assignee-filter"
-              v-model="filters.assignee"
-              type="text"
-              placeholder="Фільтр по призначеному"
-              @input="applyFilters"
-          >
-        </div>
-
         <div class="filter-group">
           <label for="status-filter">Статус:</label>
           <select
@@ -147,7 +146,7 @@
                   class="show-more-btn"
                   @click="toggleDescription(ticket.TicketID)"
               >
-                {{ expandedDescriptions[ticket.TicketID] ? 'Менше' : 'Більше' }}
+                {{ expandedDescriptions[ticket.TicketID] ? '▲' : '▼' }}
               </button>
             </td>
             <td>
@@ -160,10 +159,7 @@
             <td>{{ formatDate(ticket.CreatedAt) }}</td>
             <td>{{ formatDate(ticket.UpdatedAt) }}</td>
             <td class="actions">
-              <button class="edit-btn" @click="editTicket(ticket)" title="Редагувати">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="delete-btn" @click="confirmDelete('ticket', ticket.TicketID, ticket.Title)" title="Видалити">
+              <button class="action-btn delete-btn" @click="confirmDelete('ticket', ticket.TicketID, ticket.Title)" title="Видалити">
                 <i class="fas fa-trash-alt"></i>
               </button>
             </td>
@@ -203,7 +199,7 @@
             <p class="notification-message">{{ notification.Message }}</p>
             <span class="notification-time">{{ formatDate(notification.CreatedAt) }}</span>
           </div>
-          <button class="delete-btn small" @click="confirmDelete('notification', notification.NotificationID, 'сповіщення')">
+          <button class="action-btn small delete" @click="confirmDelete('notification', notification.NotificationID, 'сповіщення')">
             <i class="fas fa-trash-alt"></i>
           </button>
         </div>
@@ -228,26 +224,52 @@
 
     <!-- Data Management Section -->
     <section class="data-management-section">
-      <h2>Управління Даними</h2>
-      <div class="data-actions">
-        <button class="action-btn backup" @click="backupData">
-          <i class="fas fa-database"></i> Резервне Копіювання
-        </button>
-        <button class="action-btn restore" @click="restoreData">
-          <i class="fas fa-redo"></i> Відновити Дані
-        </button>
-        <button class="action-btn export" @click="exportData">
-          <i class="fas fa-file-export"></i> Експортувати
-        </button>
-        <button class="action-btn import" @click="importData">
-          <i class="fas fa-file-import"></i> Імпортувати
-        </button>
+      <div class="section-header">
+        <h2>Управління Даними</h2>
+      </div>
+
+      <div class="data-grid">
+        <div class="data-card" @click="backupData">
+          <div class="card-icon backup">
+            <i class="fas fa-database"></i>
+          </div>
+          <h3>Резервна копія</h3>
+          <p>Створення повної резервної копії системи</p>
+        </div>
+
+        <div class="data-card" @click="restoreData">
+          <div class="card-icon restore">
+            <i class="fas fa-redo"></i>
+          </div>
+          <h3>Відновлення</h3>
+          <p>Відновлення системи з резервної копії</p>
+        </div>
+
+        <div class="data-card" @click="exportData">
+          <div class="card-icon export">
+            <i class="fas fa-file-export"></i>
+          </div>
+          <h3>Експорт</h3>
+          <p>Експорт даних у зовнішній формат</p>
+        </div>
+
+        <div class="data-card" @click="importData">
+          <div class="card-icon import">
+            <i class="fas fa-file-import"></i>
+          </div>
+          <h3>Імпорт</h3>
+          <p>Імпорт даних з зовнішніх джерел</p>
+        </div>
       </div>
     </section>
 
     <!-- Create User Modal -->
     <transition name="modal-fade">
-      <div v-if="showCreateUserModal" class="modal-overlay" @click.self="showCreateUserModal = false">
+      <div
+          v-if="showCreateUserModal"
+          class="modal-overlay"
+          @mousedown="closeModalOnOutsideClick($event, 'create')"
+      >
         <div class="modal">
           <div class="modal-header">
             <h3>Створити нового користувача</h3>
@@ -280,10 +302,7 @@
                     <input
                         :type="isPasswordVisible ? 'text' : 'password'"
                         v-model="newUser.Password"
-                        id="password"
-                        placeholder="Введіть пароль"
-                        required
-                        class="form-input"
+                        @input="validatePassword(newUser.Password, 'create')"
                     />
                     <button
                         type="button"
@@ -293,6 +312,24 @@
                     >
                       <i class="fas" :class="isPasswordVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
                     </button>
+                  </div>
+
+                  <div class="password-strength">
+                    <div class="strength-bar" :class="{
+        'weak': passwordStrength === 1,
+        'medium': passwordStrength === 2 || passwordStrength === 3,
+        'strong': passwordStrength === 4
+      }"></div>
+                    <div class="strength-labels">
+                      <span :class="{ 'active': passwordStrength > 0 }">Мінімум</span>
+                      <span :class="{ 'active': passwordStrength > 1 }">Буква</span>
+                      <span :class="{ 'active': passwordStrength > 2 }">Цифра</span>
+                      <span :class="{ 'active': passwordStrength > 3 }">Спецсимвол</span>
+                    </div>
+                  </div>
+
+                  <div v-if="passwordErrors.create?.length" class="error-messages">
+                    <p v-for="error in passwordErrors.create" :key="error" class="error-text">{{ error }}</p>
                   </div>
                 </div>
               </div>
@@ -304,7 +341,9 @@
                 </select>
               </div>
               <div class="form-actions">
-                <button type="button" class="cancel-btn" @click="showCreateUserModal = false">Скасувати</button>
+                <button type="button" class="cancel-btn" @click="resetNewUserForm; showCreateUserModal = false">
+                  Скасувати
+                </button>
                 <button type="submit" class="submit-btn">Створити</button>
               </div>
             </form>
@@ -313,46 +352,92 @@
       </div>
     </transition>
 
-    <!-- Edit User Modal -->
-    <transition name="modal-fade">
-      <div v-if="editUserData" class="modal-overlay" @click.self="editUserData = null">
-        <div class="modal">
-          <div class="modal-header">
-            <h3>Редагувати користувача</h3>
-            <button class="close-btn" @click="editUserData = null">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <div class="modal-body">
-            <form @submit.prevent="submitEditUser">
-              <div class="form-group">
-                <label>Ім'я</label>
-                <input v-model="editUserData.FirstName" type="text" placeholder="Введіть ім'я" required />
-              </div>
-              <div class="form-group">
-                <label>Прізвище</label>
-                <input v-model="editUserData.LastName" type="text" placeholder="Введіть прізвище" required />
-              </div>
-              <div class="form-group">
-                <label>Юзернейм</label>
-                <input v-model="editUserData.Username" type="text" placeholder="Введіть юзернейм" required />
-              </div>
-              <div class="form-group">
-                <label>Роль</label>
-                <select v-model="editUserData.RoleID" required>
-                  <option value="2">Користувач</option>
-                  <option value="1">Адміністратор</option>
-                </select>
-              </div>
-              <div class="form-actions">
-                <button type="button" class="cancel-btn" @click="editUserData = null">Скасувати</button>
-                <button type="submit" class="submit-btn">Зберегти</button>
-              </div>
-            </form>
+      <!-- Edit User Modal -->
+      <transition name="modal-fade">
+        <div v-if="editUserData" class="modal-overlay" @click.self="editUserData = null">
+          <div class="modal">
+            <div class="modal-header">
+              <h3>Редагувати користувача</h3>
+              <button class="close-btn" @click="editUserData = null">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="modal-body">
+              <form @submit.prevent="submitEditUser">
+                <!-- Existing fields -->
+                <div class="form-group">
+                  <label>Ім'я</label>
+                  <input v-model="editUserData.FirstName" type="text" placeholder="Введіть ім'я" required />
+                </div>
+                <div class="form-group">
+                  <label>Прізвище</label>
+                  <input v-model="editUserData.LastName" type="text" placeholder="Введіть прізвище" required />
+                </div>
+                <div class="form-group">
+                  <label>Юзернейм</label>
+                  <input v-model="editUserData.Username" type="text" placeholder="Введіть юзернейм" required />
+                </div>
+                <div class="form-group">
+                  <label>Email</label>
+                  <input v-model="editUserData.Email" type="email" placeholder="Введіть email" required />
+                </div>
+
+                <!-- New password field -->
+                <div class="form-group">
+                  <label>Новий пароль (залиште порожнім, щоб не змінювати)</label>
+                  <div class="input-group">
+                    <div class="password-wrapper">
+                      <input
+                          :type="isPasswordVisible ? 'text' : 'password'"
+                          v-model="editUserData.Password"
+                          @input="validatePassword(editUserData.Password, 'edit')"
+                      />
+                      <button
+                          type="button"
+                          @click="togglePasswordVisibility"
+                          class="eye-button"
+                          :class="{ 'active': isPasswordVisible }"
+                      >
+                        <i class="fas" :class="isPasswordVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
+                      </button>
+                    </div>
+
+                    <div class="password-strength" v-if="editUserData.Password">
+                      <div class="strength-bar" :class="{
+                  'weak': passwordStrength === 1,
+                  'medium': passwordStrength === 2 || passwordStrength === 3,
+                  'strong': passwordStrength === 4
+                }"></div>
+                      <div class="strength-labels">
+                        <span :class="{ 'active': passwordStrength > 0 }">Мінімум</span>
+                        <span :class="{ 'active': passwordStrength > 1 }">Буква</span>
+                        <span :class="{ 'active': passwordStrength > 2 }">Цифра</span>
+                        <span :class="{ 'active': passwordStrength > 3 }">Спецсимвол</span>
+                      </div>
+                    </div>
+
+                    <div v-if="passwordErrors.edit?.length" class="error-messages">
+                      <p v-for="error in passwordErrors.edit" :key="error" class="error-text">{{ error }}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>Роль</label>
+                  <select v-model="editUserData.RoleID" required>
+                    <option value="2">Користувач</option>
+                    <option value="1">Адміністратор</option>
+                  </select>
+                </div>
+                <div class="form-actions">
+                  <button type="button" class="cancel-btn" @click="editUserData = null">Скасувати</button>
+                  <button type="submit" class="submit-btn">Зберегти</button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
-      </div>
-    </transition>
+      </transition>
 
     <!-- Confirmation Modal -->
     <transition name="modal-fade">
@@ -372,11 +457,12 @@
         </div>
       </div>
     </transition>
+    </div>
   </div>
 </template>
 
 <script>
-import { ref, onMounted,computed } from "vue";
+import { reactive, ref, onMounted,watch, computed } from "vue";
 import { adminApi } from "../api";
 import { format } from 'date-fns';
 import { useAuthStore } from '../store/auth';
@@ -389,7 +475,10 @@ export default {
     const notifications = ref([]);
     const users = ref([]);
     const editUserData = ref(null);
-    const isPasswordVisible = ref(false);
+    const isPasswordVisible = reactive({
+      create: false,
+      edit: false
+    });
     const showCreateUserModal = ref(false);
     const authStore = useAuthStore();
     const router = useRouter();
@@ -400,6 +489,97 @@ export default {
     const currentNotificationsPage = ref(1);
     const currentUsersPage = ref(1);
 
+    const passwordErrors = reactive({
+      create: [],
+      edit: []
+    });
+    const passwordStrength = ref(0);
+    const hasMinLength = ref(false);
+    const hasLetter = ref(false);
+    const hasNumber = ref(false);
+    const hasSpecialChar = ref(false);
+
+    const closeModalOnOutsideClick = (event, modalType) => {
+      const isClickInside = event.target.closest('.modal');
+      if (!isClickInside) {
+        if (modalType === 'create') {
+          resetNewUserForm();
+          showCreateUserModal.value = false;
+        } else {
+          editUserData.value = null;
+        }
+      }
+    };
+
+
+    const resetNewUserForm = () => {
+      newUser.value = {
+        Username: '',
+        Password: '',
+        FirstName: '',
+        LastName: '',
+        Email: '',
+        RoleID: '2',
+      };
+      passwordStrength.value = 0;
+      passwordErrors.create = [];
+      hasMinLength.value = false;
+      hasLetter.value = false;
+      hasNumber.value = false;
+      hasSpecialChar.value = false;
+    };
+
+    watch(showCreateUserModal, (newVal) => {
+      if (!newVal) {
+        resetNewUserForm();
+      }
+    });
+    const validatePassword = (password, type) => {
+      passwordErrors[type] = [];
+      if (!password) {
+        passwordStrength.value = 0;
+        return;
+      }
+
+      let strength = 0;
+
+      if (password.length >= 8) {
+        strength++;
+      } else {
+        passwordErrors[type].push("Пароль повинен містити щонайменше 8 символів");
+      }
+
+      if (/[a-zA-Z]/.test(password)) {
+        strength++;
+      } else {
+        passwordErrors[type].push("Пароль повинен містити щонайменше 1 літеру");
+      }
+
+      if (/\d/.test(password)) {
+        strength++;
+      } else {
+        passwordErrors[type].push("Пароль повинен містити щонайменше 1 цифру");
+      }
+
+      if (/[^a-zA-Z0-9\s]/.test(password)) {
+        strength++;
+      } else {
+        passwordErrors[type].push("Пароль повинен містити щонайменше 1 спецсимвол");
+      }
+
+      passwordStrength.value = strength;
+    };
+
+
+
+    const resetEditPasswordFields = () => {
+      if (editUserData.value) {
+        editUserData.value.Password = '';
+      }
+      isPasswordVisible.value = false;
+      passwordErrors.edit = [];
+      passwordStrength.value = 0;
+    };
     const togglePasswordVisibility = () => {
       isPasswordVisible.value = !isPasswordVisible.value;
     };
@@ -541,9 +721,6 @@ export default {
       if (currentPage.value > 1) currentPage.value--;
     };
 
-    const editTicket = (ticket) => {
-      console.log('Editing ticket:', ticket);
-    };
     const fetchNotifications = async () => {
       try {
         const response = await adminApi.getAllNotifications();
@@ -606,15 +783,30 @@ export default {
     };
 
     const editUser = (user) => {
-      editUserData.value = {...user};
+      editUserData.value = {
+        ...user,
+        Password: ''
+      };
+      resetEditPasswordFields();
     };
 
     const submitEditUser = async () => {
+      if (editUserData.value.Password) {
+        validatePassword(editUserData.value.Password, 'edit');
+        if (passwordErrors.edit.length > 0) {
+          alert("Помилка пароля:\n" + passwordErrors.edit.join("\n"));
+          return;
+        }
+      }
+
       try {
-        const userDataToSend = {
-          ...editUserData.value,
-          RoleID: parseInt(editUserData.value.RoleID),
-        };
+        const userDataToSend = { ...editUserData.value };
+
+        if (!userDataToSend.Password) {
+          delete userDataToSend.Password;
+        }
+
+        userDataToSend.RoleID = parseInt(userDataToSend.RoleID);
 
         await adminApi.updateUser(editUserData.value.UserID, userDataToSend);
         editUserData.value = null;
@@ -624,7 +816,24 @@ export default {
       }
     };
 
+    watch(editUserData, (newVal) => {
+      if (!newVal) {
+        resetEditPasswordFields();
+      }
+    }, { deep: true });
+    watch(() => editUserData.value?.Password, (newPassword) => {
+      validatePassword(newPassword, 'edit');
+    });
+    watch(() => newUser.value?.Password, (newPassword) => {
+      validatePassword(newPassword, 'create');
+    })
     const submitCreateUser = async () => {
+      validatePassword(newUser.value.Password, 'create');
+      if (passwordErrors.create.length > 0) {
+        alert("Помилка пароля:\n" + passwordErrors.create.join("\n"));
+        return;
+      }
+
       try {
         await adminApi.createUser({
           ...newUser.value,
@@ -641,12 +850,25 @@ export default {
           RoleID: '2'
         };
 
+        passwordStrength.value = 0;
+        hasMinLength.value = false;
+        hasLetter.value = false;
+        hasNumber.value = false;
+        hasSpecialChar.value = false;
+        passwordErrors.value = [];
+
         await fetchUsers();
       } catch (error) {
         console.error('Помилка при створенні користувача:', error);
+
+        const serverMessage = error.response?.data?.message
+            || error.response?.data?.error
+            || error.message
+            || "Невідома помилка сервера";
+
+        alert(`Помилка: ${serverMessage}`);
       }
     };
-
     const backupData = async () => {
       try {
         const response = await adminApi.backupData();
@@ -770,6 +992,7 @@ export default {
       submitEditUser,
       submitCreateUser,
 
+      closeModalOnOutsideClick,
       filters,
       statusOptions,
       filteredTickets,
@@ -783,7 +1006,6 @@ export default {
       currentPage,
       nextPage,
       prevPage,
-      editTicket,
       paginatedUsers,
       currentUsersPage,
       totalUsersPages,
@@ -803,7 +1025,14 @@ export default {
       expandedDescriptions,
       itemsPerPage,
       isPasswordVisible,
-      togglePasswordVisibility
+      togglePasswordVisibility,
+
+      passwordErrors,
+      passwordStrength,
+      hasMinLength,
+      hasLetter,
+      hasNumber,
+      hasSpecialChar
     };
   }
 };
@@ -811,106 +1040,237 @@ export default {
 
 <style scoped>
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: 'Roboto', sans-serif;
-  line-height: 1.6;
-  color: var(--dark-color);
-  background-color: #f5f7fa;
-}
-
 .admin-dashboard {
-  max-width: 1400px;
-  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+.admin-dashboard-card {
+  width: 100%;
+  max-width: 1200px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
   padding: 2rem;
+  margin: auto;
 }
 .admin-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-  position: relative;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #eaeaea;
 }
 h1 {
-  text-align: center;
-  margin-bottom: 2rem;
-  color: var(--primary-color);
-  font-size: 2.2rem;
-  font-weight: 700;
-}
-
-h2 {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
+  color: #2c3e50;
   font-weight: 600;
-  color: var(--dark-color);
-  margin-bottom: 1.5rem;
 }
 
 .section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.2rem;
 }
 
+.section-header h2 {
+  font-size: 1.4rem;
+  color: #2c3e50;
+  font-weight: 600;
+}
 .empty-state {
   text-align: center;
-  padding: 2rem;
-  background: var(--white);
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  margin-bottom: 2rem;
+  padding: 2.5rem;
+  background: #f9fbfd;
+  border-radius: 10px;
+  margin: 1.5rem 0;
+  border: 1px dashed #e1e8f0;
 }
 
 .empty-icon {
-  font-size: 3rem;
-  color: var(--gray-color);
+  font-size: 2.5rem;
+  color: #a0aec0;
   margin-bottom: 1rem;
 }
-
-.empty-state p {
-  color: var(--gray-color);
-  font-size: 1.1rem;
+.password-strength {
+  margin-top: 0.8rem;
 }
 
+.strength-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: #e0e0e0;
+  overflow: hidden;
+  position: relative;
+}
+
+.strength-bar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.strength-bar.weak::after {
+  width: 25%;
+  background: #ff3860;
+}
+
+.strength-bar.medium::after {
+  width: 50%;
+  background: #ffdd57;
+}
+
+.strength-bar.strong::after {
+  width: 100%;
+  background: #23d160;
+}
+
+.strength-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+}
+
+.strength-labels span {
+  color: #b5b5b5;
+  flex: 1;
+  text-align: center;
+}
+
+.strength-labels span.active {
+  color: #2d3748;
+  font-weight: 500;
+}
+
+.error-messages {
+  margin-top: 0.5rem;
+}
+
+.error-text {
+  color: #ff3860;
+  font-size: 0.85rem;
+  margin: 0.2rem 0;
+}
+.empty-state p {
+  color: #718096;
+  font-size: 1.05rem;
+}
+
+.password-strength {
+  margin-top: 0.8rem;
+}
+
+.strength-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: #e0e0e0;
+  overflow: hidden;
+  position: relative;
+}
+
+.strength-bar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.strength-bar.weak::after {
+  width: 33%;
+  background: #ff3860;
+}
+
+.strength-bar.medium::after {
+  width: 66%;
+  background: #ffdd57;
+}
+
+.strength-bar.strong::after {
+  width: 100%;
+  background: #23d160;
+}
+
+.strength-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+}
+
+.strength-labels span {
+  color: #b5b5b5;
+}
+
+.strength-labels span.active {
+  color: var(--dark-color);
+  font-weight: 500;
+}
+
+.password-rules {
+  margin-top: 0.8rem;
+  padding-left: 1.2rem;
+}
+
+.password-rules li {
+  color: #b5b5b5;
+  font-size: 0.85rem;
+  margin-bottom: 0.3rem;
+  list-style-type: none;
+  display: flex;
+  align-items: center;
+}
+
+.password-rules li.valid {
+  color: #23d160;
+}
+
+.password-rules li i {
+  margin-right: 0.5rem;
+  font-size: 0.9rem;
+}
 .table-container {
   overflow-x: auto;
-  background: var(--white);
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  margin-bottom: 2rem;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  margin-bottom: 1.8rem;
+  border: 1px solid #edf2f7;
 }
 
 .data-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .data-table th {
-  background-color: var(--primary-color);
-  color: var(--white);
-  padding: 1rem;
+  background: #f8f9fa;
+  color: #4a5568;
+  padding: 10px 12px;
   text-align: left;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-bottom: 2px solid #e2e8f0;
 }
 
+.data-table th,
 .data-table td {
-  padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
-  vertical-align: middle;
-}
-
-.data-table tr:last-child td {
-  border-bottom: none;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #edf2f7;
 }
 
 .data-table tr:hover {
-  background-color: rgba(67, 97, 238, 0.05);
+  background-color: #f8fafc;
 }
 
 .role-badge {
@@ -982,45 +1342,135 @@ button i {
 }
 
 .create-btn {
-  background-color: var(--primary-color);
-  color: var(--white);
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: #4361ee;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 0.9rem 1.4rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  box-shadow: 0 4px 10px rgba(67, 97, 238, 0.25);
+  z-index: 100;
 }
 
 .create-btn:hover {
-  background-color: var(--secondary-color);
+  background: #3a56e0;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(67, 97, 238, 0.3);
 }
-
-.edit-btn {
-  background-color: var(--info-color);
-  color: var(--white);
-  padding: 0.5rem;
-}
-
-.edit-btn:hover {
-  background-color: #3a7bd5;
-}
-
-.delete-btn {
-  background-color: var(--danger-color);
-  color: var(--white);
-  padding: 0.5rem;
-}
-
-.delete-btn:hover {
-  background-color: #e5177e;
-}
-
-.delete-btn.small {
-  padding: 0.4rem 0.6rem;
-}
-
 .action-btn {
-  padding: 0.8rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 500;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.action-btn.edit {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.action-btn.delete {
+  background: #fff1f0;
+  color: #f5222d;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 .data-management-section h2{
   padding-top: 30px;
+}
+.data-management-section {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.data-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.data-card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  border: 2px solid transparent;
+}
+
+.data-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.data-card:hover .card-icon {
+  transform: scale(1.1);
+}
+
+.card-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.2rem;
+  font-size: 2rem;
+  transition: all 0.3s ease;
+}
+
+.card-icon.backup {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.card-icon.restore {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.card-icon.export {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.card-icon.import {
+  background-color: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+}
+
+.data-card h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+  color: var(--dark-color);
+}
+
+.data-card p {
+  color: var(--gray-color);
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 .backup {
   background-color: #10b981;
@@ -1066,35 +1516,38 @@ button i {
 }
 
 .notifications-list {
-  background: var(--white);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   padding: 1rem;
+  border: 1px solid #edf2f7;
 }
 
 .notification-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 0.9rem;
+  border-bottom: 1px solid #f0f4f8;
 }
 
 .notification-item:last-child {
   border-bottom: none;
 }
 
+
 .notification-content {
   flex: 1;
 }
-
 .notification-message {
   font-weight: 500;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
+  color: #2d3748;
 }
 
 .notification-time {
-  font-size: 0.85rem;
-  color: var(--gray-color);
+  font-size: 0.8rem;
+  color: #a0aec0;
 }
 .password-wrapper {
   position: relative;
@@ -1159,11 +1612,11 @@ button i {
   left: 0;
   right: 0;
   bottom: 0;
-  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
-
+  z-index: 1000;
 }
 
 .modal-fade-enter-active .modal,
@@ -1182,48 +1635,47 @@ button i {
 }
 .modal, .confirm-modal {
   background-color: white;
-  border-radius: 10px;
+  border-radius: 14px;
   width: 100%;
-  max-width: 500px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  max-width: 480px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   overflow: hidden;
 }
 
 .confirm-modal {
-  max-width: 400px;
+  max-width: 380px;
 }
 
 .modal-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid #f0f4f8;
   display: flex;
   justify-content: space-between;
-  background-color: white;
   align-items: center;
+  background: #f8fafc;
 }
-
 .modal-header h3 {
-  font-size: 1.3rem;
+  font-size: 1.25rem;
   font-weight: 600;
-  color: var(--dark-color);
+  color: #2c3e50;
 }
 
 .close-btn {
   background: none;
   border: none;
-  color: var(--gray-color);
-  font-size: 1.2rem;
+  color: #a0aec0;
+  font-size: 1.1rem;
   cursor: pointer;
   padding: 0.2rem;
+  transition: color 0.3s ease;
 }
 
 .close-btn:hover {
-  color: var(--danger-color);
+  color: #f5222d;
 }
 
 .modal-body {
   padding: 1.5rem;
-  background-color: white;
 }
 
 .form-group {
@@ -1283,26 +1735,27 @@ button i {
   gap: 1rem;
 }
 .logout-btn {
-  background-color: var(--danger-color);
-  color: var(--white);
-  padding: 0.8rem 1.5rem;
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  background: #4361ee;
+  color: white;
+  padding: 0.7rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 0.7rem;
-  font-size: 1rem;
+  gap: 0.5rem;
+  box-shadow: 0 2px 5px rgba(67, 97, 238, 0.2);
 }
 
 .logout-btn:hover {
-  background-color: #e5177e;
+  background: #3a56e0;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.3);
+  box-shadow: 0 4px 8px rgba(67, 97, 238, 0.25);
 }
 
-.logout-btn i {
-  font-size: 1.1rem;
-}
 .ticket-filters {
   display: flex;
   gap: 1rem;
@@ -1357,57 +1810,51 @@ button i {
 .show-more-btn {
   background: none;
   border: none;
-  color: var(--primary-color);
+  color: #4299e1;
   cursor: pointer;
   font-size: 0.8rem;
   padding: 0.2rem 0.5rem;
   margin-left: 0.5rem;
   white-space: nowrap;
+  font-weight: 600;
 }
 
-.show-more-btn:hover {
-  text-decoration: underline;
-}
 .pagination-controls {
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 1.2rem;
   gap: 1rem;
-  padding: 1rem;
-  background-color: #f8f9fa;
-  border-top: 1px solid #dee2e6;
+}
+
+.pagination-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #edf2f7;
+  color: #4a5568;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .pagination-btn:disabled {
-  background-color: var(--gray-color);
+  opacity: 0.5;
   cursor: not-allowed;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #e2e8f0;
+  transform: translateY(-1px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .page-info {
   font-size: 0.9rem;
-  color: var(--gray-color);
-}
-.pagination-btn {
-  padding: 0.5rem 1rem;
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  min-width: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-
-.pagination-btn:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-.page-info {
-  font-size: 1rem;
-  color: var(--dark-color);
+  color: #718096;
 }
 
 .confirm-btn, .submit-btn {
@@ -1431,35 +1878,55 @@ button:disabled {
   opacity: 0.7;
 }
 
-.pagination-btn {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-}
-
-.pagination-btn:disabled {
-  background-color: #e0e0e0 !important;
-  color: #9e9e9e !important;
-}
-
 .cancel-btn {
-  background-color: var(--gray-color) !important;
-  color: white !important;
+  background: #edf2f7;
+  color: #4a5568;
+  padding: 0.7rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .submit-btn, .confirm-btn {
-  background-color: var(--primary-color) !important;
-  color: white !important;
+  padding: 0.7rem 1.4rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submit-btn {
+  background: #4361ee;
+  color: white;
 }
 
 .confirm-btn {
-  background-color: var(--danger-color) !important;
+  background: #f5222d;
+  color: white;
 }
 
-button:not(:disabled):hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+.cancel-btn:hover {
+  background: #e2e8f0;
 }
+
+.submit-btn:hover {
+  background: #3a56e0;
+}
+
+.confirm-btn:hover {
+  background: #cf1322;
+}
+
+.submit-btn:disabled, .confirm-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .admin-dashboard {
     padding: 1rem;
@@ -1475,6 +1942,11 @@ button:not(:disabled):hover {
 
   .modal {
     width: 95%;
+    user-select: none;
+  }
+
+  .form-input, .form-group label, .password-wrapper {
+    user-select: text;
   }
   .admin-header {
     flex-direction: column;

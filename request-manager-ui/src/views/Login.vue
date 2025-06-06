@@ -1,52 +1,54 @@
 <template>
-  <div class="login-container">
-    <div class="login-form">
-      <h1>Вхід в систему</h1>
-      <form @submit.prevent="handleSubmit">
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1>Ласкаво просимо!</h1>
+        <p>Увійдіть у свій акаунт</p>
+      </div>
+
+      <form @submit.prevent="handleSubmit" class="auth-form">
         <div class="input-group">
-          <label for="username">Логін</label>
           <input
-              type="text"
               v-model="username"
+              type="text"
               id="username"
-              placeholder="Введіть ваш логін"
               required
               class="form-input"
+              placeholder=" "
           />
+          <label for="username">Логін</label>
+          <div class="input-border"></div>
         </div>
 
-        <div class="input-group">
+        <div class="input-group password-group">
+          <input
+              v-model="password"
+              :type="isPasswordVisible ? 'text' : 'password'"
+              id="password"
+              required
+              class="form-input"
+              placeholder=" "
+          />
           <label for="password">Пароль</label>
-          <div class="password-wrapper">
-            <input
-                :type="isPasswordVisible ? 'text' : 'password'"
-                v-model="password"
-                id="password"
-                placeholder="Введіть ваш пароль"
-                required
-                class="form-input"
-            />
-            <button
-                type="button"
-                @click="togglePasswordVisibility"
-                class="eye-button"
-                :class="{ 'active': isPasswordVisible }"
-            >
-              <i class="fas" :class="isPasswordVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
-            </button>
-          </div>
+          <div class="input-border"></div>
+          <button
+              type="button"
+              class="password-toggle"
+              @click="togglePasswordVisibility"
+          >
+            <i class="fas" :class="isPasswordVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
+          </button>
         </div>
 
-        <div class="actions">
-          <button type="submit" class="btn-submit">
-            <i class="fas fa-sign-in-alt"></i> Увійти
+        <div class="form-footer">
+          <button type="submit" class="submit-btn" :disabled="isLoading">
+            <span v-if="!isLoading">Увійти</span>
+            <span v-else class="loading-spinner"></span>
           </button>
-          <div class="links">
-            <router-link to="/register" class="link">
-              <i class="fas fa-user-plus"></i> Зареєструватися
-            </router-link>
-            <router-link to="/registerAdmin" class="link admin">
-              <i class="fas fa-user-shield"></i> Зареєструватися як адміністратор
+
+          <div class="auth-links">
+            <router-link to="/register" class="auth-link">
+              Немає акаунту? <span>Зареєструватися</span>
             </router-link>
           </div>
         </div>
@@ -63,6 +65,7 @@ import { useAuthStore } from '../store/auth';
 const username = ref('');
 const password = ref('');
 const isPasswordVisible = ref(false);
+const isLoading = ref(false);
 const router = useRouter();
 const authStore = useAuthStore();
 
@@ -71,6 +74,8 @@ const togglePasswordVisibility = () => {
 };
 
 const handleSubmit = async () => {
+  isLoading.value = true;
+
   try {
     const success = await authStore.login({
       username: username.value,
@@ -79,166 +84,253 @@ const handleSubmit = async () => {
 
     if (!success) return;
 
-    if (authStore.role === 1) {
-      router.push('/admin-dashboard');
-    } else {
-      router.push('/dashboard');
-    }
+
+    setTimeout(() => {
+      router.push(authStore.role === 1 ? '/admin-dashboard' : '/dashboard');
+    }, 1500);
+
   } catch (error) {
-    console.error('Помилка при авторизації:', error);
-    alert('Не вдалося увійти: ' + (error.response?.data?.message || error.message));
+    showErrorNotification('Помилка входу: ' + (error.response?.data?.message || error.message));
+  } finally {
+    isLoading.value = false;
   }
+};
+
+const showErrorNotification = (message) => {
+  alert(message);
 };
 </script>
 
 <style scoped>
-.login-container {
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.auth-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #f5f7fa;
-  padding: 20px;
+  width: 100%;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
-.login-form {
-  background-color: var(--white);
-  padding: 2.5rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+.auth-card {
   width: 100%;
   max-width: 450px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  padding: 3rem;
+  margin: auto;
 }
 
-h1 {
+.auth-header {
   text-align: center;
-  margin-bottom: 2rem;
-  color: var(--primary-color);
-  font-size: 1.8rem;
+  margin-bottom: 2.5rem;
+}
+
+.auth-header h1 {
+  font-size: 2.2rem;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
   font-weight: 600;
 }
 
-.input-group {
+.auth-header p {
+  color: #7f8c8d;
+  font-size: 1.1rem;
+}
+
+.auth-form {
   margin-bottom: 1.5rem;
 }
 
+.input-group {
+  position: relative;
+  margin-bottom: 1.8rem;
+}
+
 .input-group label {
-  display: block;
-  margin-bottom: 0.75rem;
-  font-weight: 500;
-  color: var(--dark-color);
-  font-size: 0.95rem;
-}
-
-.form-input {
-  width: 100%;
-  padding: 0.9rem 1rem;
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  color: #7f8c8d;
   font-size: 1rem;
+  transition: all 0.3s ease;
+  pointer-events: none;
+  background: white;
+  padding: 0 5px;
+}
+
+.input-group .form-input {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid #ddd;
   border-radius: 8px;
-  border: 1px solid var(--border-color);
-  transition: all 0.2s ease;
+  font-size: 1rem;
+  transition: all 0.3s ease;
 }
 
-.form-input:focus {
+.input-group .form-input:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+  border-color: #3498db;
 }
 
-.password-wrapper {
+.input-group .form-input:focus + label,
+.input-group .form-input:not(:placeholder-shown) + label {
+  top: -10px;
+  left: 10px;
+  font-size: 0.85rem;
+  color: #3498db;
+}
+
+.input-border {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #3498db;
+  transition: width 0.3s ease;
+}
+
+.input-group .form-input:focus ~ .input-border {
+  width: 100%;
+}
+
+.password-group {
   position: relative;
 }
 
-.eye-button {
+.password-toggle {
   position: absolute;
+  right: 15px;
   top: 50%;
-  right: 12px;
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: var(--gray-color);
-  font-size: 1rem;
+  color: #7f8c8d;
   cursor: pointer;
-  padding: 0.5rem;
-  transition: color 0.2s ease;
+  font-size: 1.1rem;
 }
 
-.eye-button:hover,
-.eye-button.active {
-  color: var(--primary-color);
-}
-
-.actions {
-  margin-top: 2rem;
-}
-
-.btn-submit {
-  background-color: var(--primary-color);
-  color: var(--white);
-  padding: 1rem;
+.submit-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: white;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 500;
-  width: 100%;
-  transition: background-color 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(52, 152, 219, 0.2);
 }
 
-.btn-submit:hover {
-  background-color: var(--secondary-color);
+.submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(52, 152, 219, 0.3);
 }
 
-.btn-submit i {
-  font-size: 0.9rem;
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
-.links {
-  margin-top: 1.5rem;
+.submit-btn:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.form-footer {
+  margin-top: 2.5rem;
+}
+
+.auth-links {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
+  margin-top: 1.8rem;
+  text-align: center;
 }
 
-.link {
-  color: var(--primary-color);
+.auth-link {
+  color: #7f8c8d;
   text-decoration: none;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: color 0.2s ease;
+  font-size: 0.95rem;
+  transition: color 0.3s ease;
 }
 
-.link:hover {
-  color: var(--secondary-color);
-  text-decoration: underline;
+.auth-link:hover {
+  color: #3498db;
 }
 
-.link i {
-  font-size: 0.8rem;
+.auth-link span {
+  color: #3498db;
+  font-weight: 500;
 }
 
-.link.admin {
-  color: var(--danger-color);
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
 }
 
-.link.admin:hover {
-  color: #e5177e;
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
+}
+
+@media (max-width: 768px) {
+  .auth-card {
+    padding: 2.5rem;
+  }
 }
 
 @media (max-width: 480px) {
-  .login-form {
+  .auth-container {
     padding: 1.5rem;
   }
 
-  h1 {
-    font-size: 1.5rem;
+  .auth-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .auth-header h1 {
+    font-size: 1.9rem;
+  }
+
+  .auth-header p {
+    font-size: 1rem;
+  }
+
+  .input-group {
     margin-bottom: 1.5rem;
+  }
+
+  .submit-btn {
+    padding: 15px;
+    font-size: 1rem;
   }
 }
 </style>

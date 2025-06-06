@@ -41,7 +41,10 @@ func (s *AuthService) IsTokenValid(token string) bool {
 }
 
 func NewAuthService(repo repository.Authorization) *AuthService {
-	return &AuthService{repo: repo}
+	return &AuthService{
+	    repo: repo,
+	    blacklist: make(map[string]time.Time),
+	}
 }
 
 func (s *AuthService) CreateUser(user Request_Manager.User) (int, error) {

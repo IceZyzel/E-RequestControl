@@ -36,8 +36,14 @@ func (s *AdministratorService) UpdateUser(UserID int, input Request_Manager.Upda
 	if err := user.ValidatePassword(); err != nil {
 		return err
 	}
-	*input.Password = generatePasswordHash(*input.Password)
-	user.Password = *input.Password
+	if input.Password != nil {
+		user.Password = *input.Password
+		if err := user.ValidatePassword(); err != nil {
+			return err
+		}
+		hashed := generatePasswordHash(*input.Password)
+		input.Password = &hashed
+	}
 	return s.repo.UpdateUser(UserID, input, user)
 }
 
