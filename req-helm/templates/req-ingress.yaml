@@ -27,3 +27,24 @@ spec:
                 name: {{.Values.services.front.name}}
                 port:
                   number: {{.Values.services.front.port}}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  namespace: monitoring
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: {{.Values.ingress.className}} # или явно nginx
+  rules:
+    - host: {{.Values.ingress.grafanaHost}}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: prometheus-grafana
+                port:
+                  number: 80

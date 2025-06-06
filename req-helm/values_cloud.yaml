@@ -2,14 +2,14 @@ replicaCount: 1
 
 image:
   back:
-    repository: zyzelq/req-back
-    tag: localtest1
+    repository: 529088291614.dkr.ecr.us-east-1.amazonaws.com/e-requestcontrol-backend
+    tag: latest
   front:
-    repository: zyzelq/req-front
-    tag: testlocal2
+    repository: 529088291614.dkr.ecr.us-east-1.amazonaws.com/e-requestcontrol-frontend
+    tag: latest
   db:
-    repository: zyzelq/req-db
-    tag: v1
+    repository: 529088291614.dkr.ecr.us-east-1.amazonaws.com/e-requestcontrol-db
+    tag: latest
 
 resources:
   requests:
@@ -32,7 +32,6 @@ services:
   front:
     name: req-front-service
     port: 80
-    nodePort: 30000
   db:
     name: req-db
     port: 3306
@@ -41,5 +40,7 @@ ingress:
   enabled: true
   name: req-ingress
   className: nginx
-  backendHost: "zyzel.de"
-  frontendHost: "zyzel.de"
+  backendHost: "www.zyzel.de"
+  frontendHost: "www.zyzel.de"
+  certificateArn: "arn:aws:acm:us-east-1:529088291614:certificate/99698458-3848-4cd0-a30d-5fbf7c961ddd"
+  grafanaHost: grafana.zyzel.de
