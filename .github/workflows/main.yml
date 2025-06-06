@@ -158,9 +158,6 @@ jobs:
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
           helm upgrade --install prometheus prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace
-
-      - name: Deploy Loki stack
-        run: |
           helm upgrade --install loki grafana/loki-stack --namespace monitoring \
             --set promtail.enabled=true \
             --set grafana.enabled=false \
