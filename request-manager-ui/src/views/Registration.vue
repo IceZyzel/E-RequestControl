@@ -1,115 +1,146 @@
 <template>
-  <div class="register-user login-container">
-    <div class="login-form">
-      <h1>Реєстрація користувача</h1>
-      <form @submit.prevent="registerUser">
-        <div class="input-group">
-          <label for="firstname">Ім'я</label>
-          <input
-              v-model="firstname"
-              type="text"
-              id="firstname"
-              required
-              class="form-input"
-              placeholder="Введіть ваше ім'я"
-          />
+  <div class="register-container">
+    <div class="register-card">
+      <div class="register-header">
+        <h1>Створити акаунт</h1>
+        <p>Заповніть форму для реєстрації</p>
+      </div>
+
+      <form @submit.prevent="registerUser" class="register-form">
+        <div class="form-grid">
+          <div class="input-group">
+            <input
+                v-model="firstname"
+                type="text"
+                id="firstname"
+                required
+                class="form-input"
+                placeholder=" "
+            />
+            <label for="firstname">Ім'я</label>
+            <div class="input-border"></div>
+          </div>
+
+          <div class="input-group">
+            <input
+                v-model="lastname"
+                type="text"
+                id="lastname"
+                required
+                class="form-input"
+                placeholder=" "
+            />
+            <label for="lastname">Прізвище</label>
+            <div class="input-border"></div>
+          </div>
+
+          <div class="input-group">
+            <input
+                v-model="email"
+                type="email"
+                id="email"
+                required
+                class="form-input"
+                placeholder=" "
+            />
+            <label for="email">Email</label>
+            <div class="input-border"></div>
+          </div>
+
+          <div class="input-group">
+            <input
+                v-model="username"
+                type="text"
+                id="username"
+                required
+                class="form-input"
+                placeholder=" "
+            />
+            <label for="username">Юзернейм</label>
+            <div class="input-border"></div>
+          </div>
+
+          <div class="input-group password-group">
+            <div class="password-input-wrapper">
+              <input
+                  v-model="password"
+                  :type="isPasswordVisible ? 'text' : 'password'"
+                  id="password"
+                  required
+                  class="form-input"
+                  placeholder=" "
+                  @input="validatePassword"
+              />
+              <label for="password">Пароль</label>
+              <div class="input-border"></div>
+              <button
+                  type="button"
+                  class="password-toggle"
+                  @click="togglePasswordVisibility"
+              >
+                <i class="fas" :class="isPasswordVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
+              </button>
+            </div>
+            <transition name="fade">
+              <div v-if="passwordErrors.length" class="password-hints">
+                <div
+                    v-for="error in passwordErrors"
+                    :key="error"
+                    class="hint-item"
+                >
+                  <i class="fas" :class="getHintIcon(error)"></i>
+                  <span>{{ getHintText(error) }}</span>
+                </div>
+              </div>
+            </transition>
+          </div>
+
+          <div class="input-group password-group">
+            <div class="password-input-wrapper">
+              <input
+                  v-model="confirmPassword"
+                  :type="isPasswordVisible ? 'text' : 'password'"
+                  id="confirmPassword"
+                  required
+                  class="form-input"
+                  placeholder=" "
+                  @input="validatePasswordMatch"
+              />
+              <label for="confirmPassword">Підтвердження паролю</label>
+              <div class="input-border"></div>
+              <button
+                  type="button"
+                  class="password-toggle"
+                  @click="togglePasswordVisibility"
+              >
+                <i class="fas" :class="isPasswordVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
+              </button>
+            </div>
+            <transition name="fade">
+              <div v-if="passwordMatchError" class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ passwordMatchError }}</span>
+              </div>
+            </transition>
+          </div>
         </div>
 
-        <div class="input-group">
-          <label for="lastname">Прізвище</label>
-          <input
-              v-model="lastname"
-              type="text"
-              id="lastname"
-              required
-              class="form-input"
-              placeholder="Введіть ваше прізвище"
-          />
-        </div>
-
-        <div class="input-group">
-          <label for="email">Email</label>
-          <input
-              v-model="email"
-              type="email"
-              id="email"
-              required
-              class="form-input"
-              placeholder="Введіть ваш email"
-          />
-        </div>
-
-        <div class="input-group">
-          <label for="username">Юзернейм</label>
-          <input
-              v-model="username"
-              type="text"
-              id="username"
-              required
-              class="form-input"
-              placeholder="Введіть юзернейм"
-          />
-        </div>
-
-        <div class="input-group password-wrapper">
-          <label for="password">Пароль</label>
-          <input
-              v-model="password"
-              :type="isPasswordVisible ? 'text' : 'password'"
-              id="password"
-              required
-              class="form-input"
-              placeholder="Введіть пароль"
-          />
-          <button
-              type="button"
-              class="eye-button"
-              :class="{ 'active': isPasswordVisible }"
-              @click="togglePasswordVisibility"
-          >
-            <i class="fas" :class="isPasswordVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
-          </button>
-        </div>
-
-        <div class="input-group password-wrapper">
-          <label for="confirmPassword">Підтвердіть пароль</label>
-          <input
-              v-model="confirmPassword"
-              :type="isPasswordVisible ? 'text' : 'password'"
-              id="confirmPassword"
-              required
-              class="form-input"
-              placeholder="Підтвердіть пароль"
-          />
-          <button
-              type="button"
-              class="eye-button"
-              :class="{ 'active': isPasswordVisible }"
-              @click="togglePasswordVisibility"
-          >
-            <i class="fas" :class="isPasswordVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
-          </button>
-        </div>
-
-        <button type="submit" class="btn-submit">
-          <i class="fas fa-user-plus"></i> Зареєструватися
+        <button type="submit" class="submit-btn" :disabled="isLoading">
+          <span v-if="!isLoading">Зареєструватися</span>
+          <span v-else class="loading-spinner"></span>
         </button>
       </form>
 
-      <div class="links">
-        <router-link to="/login" class="link">
-          <i class="fas fa-sign-in-alt"></i> Вхід в систему
-        </router-link>
-        <router-link to="/registerAdmin" class="link admin">
-          <i class="fas fa-user-shield"></i> Реєстрація адміністратора
-        </router-link>
+      <div class="login-redirect">
+        <span>Вже маєте акаунт?</span>
+        <router-link to="/login" class="login-link">Увійти</router-link>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { authApi } from '../api';
 import { useRouter } from 'vue-router';
 
@@ -124,16 +155,79 @@ export default {
     const password = ref('');
     const confirmPassword = ref('');
     const isPasswordVisible = ref(false);
+    const passwordErrors = ref([]);
+    const passwordMatchError = ref('');
+    const isLoading = ref(false);
 
     const togglePasswordVisibility = () => {
       isPasswordVisible.value = !isPasswordVisible.value;
     };
 
+    const getHintIcon = (error) => {
+      const isError = passwordErrors.value.includes(error);
+      return isError ? 'fa-times-circle error' : 'fa-check-circle success';
+    };
+
+    const getHintText = (error) => {
+      const hints = {
+        "Пароль повинен містити щонайменше 8 символів": "Мінімум 8 символів",
+        "Пароль повинен містити щонайменше 1 літеру": "1 літера",
+        "Пароль повинен містити щонайменше 1 цифру": "1 цифра",
+        "Пароль повинен містити щонайменше 1 спеціальний символ": "1 спецсимвол"
+      };
+      return hints[error] || error;
+    };
+
+    const validatePassword = () => {
+      const errors = [];
+      const requirements = [
+        {
+          condition: password.value.length < 8,
+          message: "Пароль повинен містити щонайменше 8 символів"
+        },
+        {
+          condition: !/[a-zA-Z]/.test(password.value),
+          message: "Пароль повинен містити щонайменше 1 літеру"
+        },
+        {
+          condition: !/\d/.test(password.value),
+          message: "Пароль повинен містити щонайменше 1 цифру"
+        },
+        {
+          condition: !/[^a-zA-Z0-9\s]/.test(password.value),
+          message: "Пароль повинен містити щонайменше 1 спеціальний символ"
+        }
+      ];
+
+      requirements.forEach(req => {
+        if (req.condition && password.value) {
+          errors.push(req.message);
+        }
+      });
+
+      passwordErrors.value = errors;
+      return errors.length === 0;
+    };
+
+    const validatePasswordMatch = () => {
+      if (password.value && confirmPassword.value && password.value !== confirmPassword.value) {
+        passwordMatchError.value = "Паролі не співпадають";
+        return false;
+      } else {
+        passwordMatchError.value = '';
+        return true;
+      }
+    };
+
     const registerUser = async () => {
-      if (password.value !== confirmPassword.value) {
-        alert("Паролі не співпадають.");
+      const isPasswordValid = validatePassword();
+      const isPasswordMatchValid = validatePasswordMatch();
+
+      if (!isPasswordValid || !isPasswordMatchValid) {
         return;
       }
+
+      isLoading.value = true;
 
       try {
         const response = await authApi.register(
@@ -143,12 +237,20 @@ export default {
             username.value,
             password.value
         );
-        alert('Ви успішно зареєструвались. Вас буде автоматично перенаправлено на сторінку входу.');
-        router.push('/login');
-        console.log('Користувача зареєстровано:', response.data);
+
+        setTimeout(() => {
+          router.push('/login');
+        }, 2000);
+
       } catch (error) {
-        alert('Помилка реєстрації. Спробуйте ще раз.');
+        showErrorNotification('Помилка реєстрації. Спробуйте ще раз.' + (error.response?.data?.message || error.message));
+      } finally {
+        isLoading.value = false;
       }
+    };
+
+    const showErrorNotification = (message) => {
+      alert(message);
     };
 
     return {
@@ -159,162 +261,266 @@ export default {
       password,
       confirmPassword,
       isPasswordVisible,
+      passwordErrors,
+      passwordMatchError,
+      isLoading,
       togglePasswordVisibility,
-      registerUser,
+      getHintIcon,
+      getHintText,
+      registerUser
     };
-  },
+  }
 };
 </script>
 
 <style scoped>
-.register-user {
-  background-color: var(--light-color);
-}
-
-.login-container {
+.register-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 2rem;
 }
 
-.login-form {
-  background-color: var(--white);
-  padding: 2.5rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+.register-card {
   width: 100%;
-  max-width: 500px;
+  max-width: 900px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  padding: 2.5rem;
 }
 
-h1 {
+.register-header {
   text-align: center;
-  margin-bottom: 2rem;
-  color: var(--primary-color);
-  font-size: 1.8rem;
+  margin-bottom: 2.5rem;
+}
+
+.register-header h1 {
+  font-size: 2.2rem;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
   font-weight: 600;
 }
 
+.register-header p {
+  color: #7f8c8d;
+  font-size: 1.1rem;
+}
+
+.register-form {
+  margin-bottom: 2rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .register-card {
+    padding: 1.5rem;
+  }
+
+  .register-header h1 {
+    font-size: 1.8rem;
+  }
+}
+
 .input-group {
+  position: relative;
   margin-bottom: 1.5rem;
 }
 
 .input-group label {
-  display: block;
-  margin-bottom: 0.75rem;
-  font-weight: 500;
-  color: var(--dark-color);
-  font-size: 0.95rem;
+  position: absolute;
+  top: 12px;
+  left: 15px;
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  pointer-events: none;
+  background: white;
+  padding: 0 5px;
 }
 
-.form-input {
+.input-group .form-input {
   width: 100%;
-  padding: 0.9rem 1rem;
-  font-size: 1rem;
+  padding: 15px;
+  border: 1px solid #ddd;
   border-radius: 8px;
-  border: 1px solid var(--border-color);
-  transition: all 0.2s ease;
+  font-size: 1rem;
+  transition: all 0.3s ease;
 }
 
-.form-input:focus {
+.input-group .form-input:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+  border-color: #3498db;
 }
 
-.password-wrapper {
+.input-group .form-input:focus + label,
+.input-group .form-input:not(:placeholder-shown) + label {
+  top: -10px;
+  left: 10px;
+  font-size: 0.8rem;
+  color: #3498db;
+}
+
+.input-border {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #3498db;
+  transition: width 0.3s ease;
+}
+
+.input-group .form-input:focus ~ .input-border {
+  width: 100%;
+}
+
+.password-group {
   position: relative;
 }
 
-.eye-button {
+
+.password-input-wrapper {
+  position: relative;
+}
+
+.password-toggle {
   position: absolute;
+  right: 15px;
   top: 50%;
-  right: 12px;
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: var(--gray-color);
-  font-size: 1rem;
+  color: #7f8c8d;
   cursor: pointer;
-  padding: 0.5rem;
-  transition: color 0.2s ease;
+  font-size: 1rem;
+  z-index: 2;
 }
 
-.eye-button:hover,
-.eye-button.active {
-  color: var(--primary-color);
+.password-hints,
+.error-message {
+  margin-top: 8px;
+}
+.password-hints {
+  margin-top: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 0.8rem;
+  border-left: 4px solid #e74c3c;
 }
 
-.btn-submit {
-  background-color: var(--primary-color);
-  color: var(--white);
-  padding: 1rem;
+.hint-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.hint-item i {
+  margin-right: 0.5rem;
+}
+
+.hint-item .error {
+  color: #e74c3c;
+}
+
+.hint-item .success {
+  color: #2ecc71;
+}
+
+.error-message {
+  color: #e74c3c;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.error-message i {
+  margin-right: 0.5rem;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: white;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
   font-size: 1rem;
   font-weight: 500;
-  width: 100%;
-  transition: background-color 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(52, 152, 219, 0.2);
 }
 
-.btn-submit:hover {
-  background-color: var(--secondary-color);
+.submit-btn:hover {
+  background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(52, 152, 219, 0.3);
 }
 
-.btn-submit i {
+.submit-btn:active {
+  transform: translateY(0);
+}
+
+.submit-btn:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.login-redirect {
+  text-align: center;
+  color: #7f8c8d;
   font-size: 0.9rem;
 }
 
-.links {
-  margin-top: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.link {
-  color: var(--primary-color);
+.login-link {
+  color: #3498db;
   text-decoration: none;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: color 0.2s ease;
-  justify-content: center;
+  margin-left: 0.5rem;
+  font-weight: 500;
+  transition: color 0.3s ease;
 }
 
-.link:hover {
-  color: var(--secondary-color);
+.login-link:hover {
+  color: #2980b9;
   text-decoration: underline;
 }
 
-.link i {
-  font-size: 0.8rem;
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
 }
-
-.link.admin {
-  color: var(--danger-color);
-}
-
-.link.admin:hover {
-  color: #e5177e;
-}
-
-@media (max-width: 480px) {
-  .login-form {
-    padding: 1.5rem;
-  }
-
-  h1 {
-    font-size: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
+.fade-enter, .fade-leave-to {
+  opacity: 0;
 }
 </style>

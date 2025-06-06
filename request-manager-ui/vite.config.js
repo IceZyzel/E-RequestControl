@@ -6,7 +6,12 @@ export default defineConfig({
   server: {
     port: 5173,
     open: true,
-    allowedHosts: ["zyzel.de"],
-
+    allowedHosts: ["www.zyzel.de"],
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      }
+    }
   },
 });
