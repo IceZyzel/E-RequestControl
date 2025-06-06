@@ -145,6 +145,12 @@ jobs:
       - name: Print config file
         run: cat ~/.kube/config
 
+      - name: Deploy Prometheus stack
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+          helm upgrade --install prometheus prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace
+          
       - name: Login to ECR
         run: |
           kubectl delete secret regcred --ignore-not-found
