@@ -66,11 +66,11 @@ export const authApi = {
 };
 
 export const requestApi = {
-  getUserTickets: () => apiClient.get("/api/tickets/"),
-  getAllUsers: () => apiClient.get("/api/users"),
+  getUserTickets: () => apiClient.get("/tickets/"),
+  getAllUsers: () => apiClient.get("/users"),
   createTicket: async (ticketData) => {
     try {
-      const response = await apiClient.post("/api/tickets/", ticketData);
+      const response = await apiClient.post("/tickets/", ticketData);
       return response.data;
     } catch (error) {
       console.error("Помилка при створенні тікета:", error);
@@ -78,10 +78,10 @@ export const requestApi = {
     }
   },
   updateTicket: (ticketID, ticketData) =>
-    apiClient.put(`/api/tickets/${ticketID}`, ticketData),
+    apiClient.put(`/tickets/${ticketID}`, ticketData),
   deleteTicket: async (ticketID) => {
     try {
-      await apiClient.delete(`/api/tickets/${ticketID}`);
+      await apiClient.delete(`/tickets/${ticketID}`);
       return ticketID;
     } catch (error) {
       console.error("Помилка при видаленні тікета:", error);
@@ -91,7 +91,7 @@ export const requestApi = {
 };
 
 export const notificationApi = {
-  getUserNotifications: () => apiClient.get("/api/notifications/"),
+  getUserNotifications: () => apiClient.get("/notifications/"),
   createNotification: async (notificationData) => {
     try {
       const response = await apiClient.post(
@@ -106,7 +106,7 @@ export const notificationApi = {
   },
   markAsRead: async (notificationID) => {
     try {
-      await apiClient.delete(`/api/notifications/${notificationID}`);
+      await apiClient.delete(`/notifications/${notificationID}`);
       return notificationID;
     } catch (error) {
       console.error("Помилка при видаленні сповіщення:", error);
