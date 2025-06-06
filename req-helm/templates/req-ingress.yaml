@@ -1,32 +1,33 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{.Values.ingress.name}}
+  name: {{ .Values.ingress.name }}
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
-  ingressClassName: {{.Values.ingress.className}}
+  ingressClassName: {{ .Values.ingress.className }}
   rules:
-    - host: {{.Values.ingress.backendHost}}
+    - host: {{ .Values.ingress.backendHost }}
       http:
         paths:
           - path: /api
             pathType: ImplementationSpecific
             backend:
               service:
-                name: {{.Values.services.back.name}}
+                name: {{ .Values.services.back.name }}
                 port:
-                  number: {{.Values.services.back.port}}
-    - host: {{.Values.ingress.frontendHost}}
+                  number: {{ .Values.services.back.port }}
+    - host: {{ .Values.ingress.frontendHost }}
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: {{.Values.services.front.name}}
+                name: {{ .Values.services.front.name }}
                 port:
-                  number: {{.Values.services.front.port}}
+                  number: {{ .Values.services.front.port }}
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -36,9 +37,9 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
-  ingressClassName: {{.Values.ingress.className}} # или явно nginx
+  ingressClassName: {{ .Values.ingress.className }}
   rules:
-    - host: {{.Values.ingress.grafanaHost}}
+    - host: {{ .Values.ingress.grafanaHost }}
       http:
         paths:
           - path: /
@@ -48,3 +49,25 @@ spec:
                 name: prometheus-grafana
                 port:
                   number: 80
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: loki-ingress
+  namespace: monitoring
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: loki.zyzel.de        # <== поменяй под свой домен
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: loki                # имя сервиса Loki, проверь в твоём кластере
+                port:
+                  number: 3100
