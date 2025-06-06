@@ -32,7 +32,6 @@ services:
   front:
     name: req-front-service
     port: 80
-    nodePort: 30000
   db:
     name: req-db
     port: 3306
@@ -40,7 +39,7 @@ services:
 ingress:
   enabled: true
   name: req-ingress
-  className: alb
+  className: nginx
   backendHost: "www.zyzel.de"
   frontendHost: "www.zyzel.de"
   certificateArn: "arn:aws:acm:us-east-1:529088291614:certificate/99698458-3848-4cd0-a30d-5fbf7c961ddd"
