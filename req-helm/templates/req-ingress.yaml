@@ -57,17 +57,18 @@ metadata:
   name: loki-ingress
   namespace: monitoring
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
-  ingressClassName: {{ .Values.ingress.className }}
+  ingressClassName: nginx
   rules:
-    - host: loki.zyzel.de        # <== поменяй под свой домен
+    - host: loki.zyzel.de
       http:
         paths:
-          - path: /
+          - path: /loki(/|$)(.*)
             pathType: Prefix
             backend:
               service:
-                name: loki                # имя сервиса Loki, проверь в твоём кластере
+                name: loki
                 port:
                   number: 3100
+
