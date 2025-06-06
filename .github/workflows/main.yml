@@ -104,27 +104,35 @@ jobs:
           dockerfile: request-manager-database/dockerfile
           context: ./request-manager-database
 
+      - name: Configure AWS credentials for cleanup
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
       - name: delete old ecr
         run: |
-                REPO_NAMES=("${{ env.REPOSITORY_FRONTEND }}" "${{ env.REPOSITORY_BACKEND }}" "${{ env.REPOSITORY_DB }}")
-                for repo in "${REPO_NAMES[@]}"; do
-                  echo "Cleaning up $repo"
-                  tags=$(aws ecr describe-images \
-                    --repository-name "$repo" \
-                    --region "${{ env.AWS_REGION }}" \
-                    --query 'imageDetails[*].imageTags' \
-                    --output json | jq -r '.[][]' | grep -v latest | grep -E '^[0-9]+$' | sort -n)
-                  echo "All numeric tags: $tags"
-                  tags_to_keep=$(echo "$tags" | tail -n 2)
-                  tags_to_delete=$(comm -23 <(echo "$tags" | sort -n) <(echo "$tags_to_keep" | sort -n))
-                  for tag in $tags_to_delete; do
-                    echo "Deleting $repo:$tag"
-                    aws ecr batch-delete-image \
-                      --repository-name "$repo" \
-                      --region "${{ env.AWS_REGION }}" \
-                      --image-ids imageTag="$tag"
-                  done
-                done
+          REPO_NAMES=("${{ env.REPOSITORY_FRONTEND }}" "${{ env.REPOSITORY_BACKEND }}" "${{ env.REPOSITORY_DB }}")
+          for repo in "${REPO_NAMES[@]}"; do
+            echo "Cleaning up $repo"
+            tags=$(aws ecr describe-images \
+              --repository-name "$repo" \
+              --region "${{ env.AWS_REGION }}" \
+              --query 'imageDetails[*].imageTags' \
+              --output json | jq -r '.[][]' | grep -v latest | grep -E '^[0-9]+$' | sort -n)
+            echo "All numeric tags: $tags"
+            tags_to_keep=$(echo "$tags" | tail -n 2)
+            tags_to_delete=$(comm -23 <(echo "$tags" | sort -n) <(echo "$tags_to_keep" | sort -n))
+            for tag in $tags_to_delete; do
+              echo "Deleting $repo:$tag"
+              aws ecr batch-delete-image \
+                --repository-name "$repo" \
+                --region "${{ env.AWS_REGION }}" \
+                --image-ids imageTag="$tag"
+            done
+          done
+
   DeployToEKS:
     needs: BUILD_AND_PUBLISH
     runs-on: ubuntu-latest
