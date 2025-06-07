@@ -2,28 +2,32 @@
   <div class="dashboard-container">
     <div class="dashboard-card">
       <header class="dashboard-header">
-        <h1>Панель управління тікетами</h1>
+        <div class="language-switcher">
+          <button @click="setLocale('ua')" :class="{ active: currentLocale === 'ua' }">{{ $t('ukrainian') }}</button>
+          <button @click="setLocale('en')" :class="{ active: currentLocale === 'en' }">{{ $t('english') }}</button>
+        </div>
+        <h1>{{ $t('dashboardTitle') }}</h1>
         <button class="logout-btn" @click="authStore.logout()">
-          <i class="fas fa-sign-out-alt"></i> Вийти
+          <i class="fas fa-sign-out-alt"></i> {{ $t('logout') }}
         </button>
       </header>
 
       <!-- Tickets Section -->
       <section class="tickets-section" v-if="tickets.length > 0">
         <div class="section-header">
-          <h2>Тікети</h2>
+          <h2>{{ $t('tickets') }}</h2>
         </div>
 
         <div class="table-container">
           <table class="data-table">
             <thead>
             <tr>
-              <th>Назва</th>
-              <th>Опис</th>
-              <th>Статус</th>
-              <th>Призначено</th>
-              <th>Створено</th>
-              <th>Дії</th>
+              <th>{{ $t('title') }}</th>
+              <th>{{ $t('description') }}</th>
+              <th>{{ $t('status') }}</th>
+              <th>{{ $t('assignee') }}</th>
+              <th>{{ $t('createdAt') }}</th>
+              <th>{{ $t('actions') }}</th>
             </tr>
             </thead>
             <tbody>
@@ -43,16 +47,16 @@
               </td>
               <td>
                   <span :class="['status-badge', getStatusClass(ticket.Status)]">
-                    {{ ticket.Status }}
+                    {{ $t(ticket.Status) }}
                   </span>
               </td>
-              <td>{{ ticket.AssigneeUsername || 'Не призначено' }}</td>
+              <td>{{ ticket.AssigneeUsername || $t('notAssigned') }}</td>
               <td>{{ formatDate(ticket.CreatedAt) }}</td>
               <td class="actions">
-                <button class="action-btn edit" @click="editTicket(ticket)" title="Редагувати">
+                <button class="action-btn edit" @click="editTicket(ticket)" :title="$t('edit')">
                   <i class="fas fa-edit"></i>
                 </button>
-                <button class="action-btn delete" @click="confirmDelete('ticket', ticket.TicketID, ticket.Title)" title="Видалити">
+                <button class="action-btn delete" @click="confirmDelete('ticket', ticket.TicketID, ticket.Title)" :title="$t('delete')">
                   <i class="fas fa-trash-alt"></i>
                 </button>
               </td>
@@ -65,7 +69,7 @@
               <i class="fas fa-chevron-left"></i>
             </button>
             <span class="page-info">
-              {{ currentPage }} / {{ totalPages }}
+              {{ $t('pageInfo', { current: currentPage, total: totalPages }) }}
             </span>
             <button class="pagination-btn" @click="nextPage" :disabled="currentPage === totalPages">
               <i class="fas fa-chevron-right"></i>
@@ -76,19 +80,19 @@
 
       <div class="empty-state" v-else>
         <i class="fas fa-ticket-alt empty-icon"></i>
-        <p>Немає активних тікетів</p>
+        <p>{{ $t('noActiveTickets') }}</p>
       </div>
 
       <!-- Notifications Section -->
       <section class="notifications-section" v-if="notifications.length > 0">
-        <h2>Сповіщення</h2>
+        <h2>{{ $t('notifications') }}</h2>
         <div class="notifications-list">
           <div v-for="notification in paginatedNotifications" :key="notification.NotificationID" class="notification-item">
             <div class="notification-content">
               <p class="notification-message">{{ notification.Message }}</p>
               <span class="notification-time">{{ formatDate(notification.CreatedAt) }}</span>
             </div>
-            <button class="action-btn small delete" @click="confirmDelete('notification', notification.NotificationID, 'сповіщення')">
+            <button class="action-btn small delete" @click="confirmDelete('notification', notification.NotificationID, $t('notification'))">
               <i class="fas fa-trash-alt"></i>
             </button>
           </div>
@@ -97,7 +101,7 @@
               <i class="fas fa-chevron-left"></i>
             </button>
             <span class="page-info">
-              {{ currentNotificationsPage }} / {{ totalNotificationsPages }}
+              {{ $t('pageInfo', { current: currentNotificationsPage, total: totalNotificationsPages }) }}
             </span>
             <button class="pagination-btn" @click="nextNotificationsPage" :disabled="currentNotificationsPage === totalNotificationsPages">
               <i class="fas fa-chevron-right"></i>
@@ -108,12 +112,12 @@
 
       <div class="empty-state" v-else>
         <i class="fas fa-bell empty-icon"></i>
-        <p>Немає нових сповіщень</p>
+        <p>{{ $t('noNewNotifications') }}</p>
       </div>
 
       <!-- Create Ticket Button -->
       <button class="create-btn floating-btn" @click="showCreateTicketModal = true">
-        <i class="fas fa-plus"></i> Новий тікет
+        <i class="fas fa-plus"></i> {{ $t('createTicket') }}
       </button>
 
       <!-- Modals -->
@@ -121,7 +125,7 @@
         <div v-if="showCreateTicketModal" class="modal-overlay" @click.self="showCreateTicketModal = false">
           <div class="modal">
             <div class="modal-header">
-              <h3>Створити тікет</h3>
+              <h3>{{ $t('createTicketTitle') }}</h3>
               <button class="close-btn" @click="showCreateTicketModal = false">
                 <i class="fas fa-times"></i>
               </button>
@@ -135,10 +139,10 @@
                       id="ticket-title"
                       required
                       class="form-input"
-                      placeholder=" "
+                      :placeholder="$t('ticketTitlePlaceholder')"
                       maxlength="60"
                   />
-                  <label for="ticket-title">Заголовок (макс. 60 символів)</label>
+                  <label for="ticket-title">{{ $t('ticketTitle') }}</label>
                   <div class="input-border"></div>
                 </div>
 
@@ -148,10 +152,10 @@
                       id="ticket-description"
                       required
                       class="form-input"
-                      placeholder=" "
+                      :placeholder="$t('problemDescription')"
                       rows="4"
                   ></textarea>
-                  <label for="ticket-description">Опис проблеми</label>
+                  <label for="ticket-description">{{ $t('problemDescription') }}</label>
                   <div class="input-border"></div>
                 </div>
 
@@ -166,14 +170,14 @@
                       {{ user.FirstName }} {{ user.LastName }} ({{ user.Username }})
                     </option>
                   </select>
-                  <label for="ticket-assignee">Призначити</label>
+                  <label for="ticket-assignee">{{ $t('assign') }}</label>
                   <div class="input-border"></div>
                 </div>
 
                 <div class="form-actions">
-                  <button type="button" class="cancel-btn" @click="showCreateTicketModal = false">Скасувати</button>
+                  <button type="button" class="cancel-btn" @click="showCreateTicketModal = false">{{ $t('cancel') }}</button>
                   <button type="submit" class="submit-btn" :disabled="isLoading">
-                    <span v-if="!isLoading">Створити</span>
+                    <span v-if="!isLoading">{{ $t('createButton') }}</span>
                     <span v-else class="loading-spinner"></span>
                   </button>
                 </div>
@@ -187,7 +191,7 @@
         <div v-if="editTicketData" class="modal-overlay" @click.self="editTicketData = null">
           <div class="modal">
             <div class="modal-header">
-              <h3>Редагувати тікет</h3>
+              <h3>{{ $t('editTicketTitle') }}</h3>
               <button class="close-btn" @click="editTicketData = null">
                 <i class="fas fa-times"></i>
               </button>
@@ -201,10 +205,10 @@
                       id="edit-ticket-title"
                       required
                       class="form-input"
-                      placeholder=" "
+                      :placeholder="$t('ticketTitlePlaceholder')"
                       maxlength="60"
                   />
-                  <label for="edit-ticket-title">Заголовок (макс. 30 символів)</label>
+                  <label for="edit-ticket-title">{{ $t('ticketTitle') }}</label>
                   <div class="input-border"></div>
                 </div>
 
@@ -214,10 +218,10 @@
                       id="edit-ticket-description"
                       required
                       class="form-input"
-                      placeholder=" "
+                      :placeholder="$t('problemDescription')"
                       rows="4"
                   ></textarea>
-                  <label for="edit-ticket-description">Опис проблеми</label>
+                  <label for="edit-ticket-description">{{ $t('problemDescription') }}</label>
                   <div class="input-border"></div>
                 </div>
 
@@ -232,14 +236,14 @@
                       {{ user.Username }}
                     </option>
                   </select>
-                  <label for="edit-ticket-assignee">Призначити</label>
+                  <label for="edit-ticket-assignee">{{ $t('assign') }}</label>
                   <div class="input-border"></div>
                 </div>
 
                 <div class="form-actions">
-                  <button type="button" class="cancel-btn" @click="editTicketData = null">Скасувати</button>
+                  <button type="button" class="cancel-btn" @click="editTicketData = null">{{ $t('cancel') }}</button>
                   <button type="submit" class="submit-btn" :disabled="isLoading">
-                    <span v-if="!isLoading">Зберегти</span>
+                    <span v-if="!isLoading">{{ $t('save') }}</span>
                     <span v-else class="loading-spinner"></span>
                   </button>
                 </div>
@@ -253,14 +257,17 @@
         <div v-if="confirmModal.show" class="modal-overlay" @click.self="confirmModal.show = false">
           <div class="confirm-modal">
             <div class="modal-header">
-              <h3>Підтвердження</h3>
+              <h3>{{ $t('confirmationTitle') }}</h3>
             </div>
             <div class="modal-body">
-              <p>Видалити {{ confirmModal.type === 'ticket' ? 'тікет' : 'сповіщення' }} <strong>"{{ confirmModal.name }}"</strong>?</p>
+              <p>{{ $t('confirmationMessage', {
+                type: $t(confirmModal.type + 'Deleted'),
+                name: confirmModal.name
+              }) }}</p>
             </div>
             <div class="modal-footer">
-              <button class="cancel-btn" @click="confirmModal.show = false">Відміна</button>
-              <button class="confirm-btn" @click="executeDelete">Видалити</button>
+              <button class="cancel-btn" @click="confirmModal.show = false">{{ $t('cancel') }}</button>
+              <button class="confirm-btn" @click="executeDelete">{{ $t('delete') }}</button>
             </div>
           </div>
         </div>
@@ -275,6 +282,9 @@ import { requestApi, notificationApi } from "../api";
 import { useAuthStore } from "../store/auth";
 import { format } from 'date-fns';
 import { useRouter } from "vue-router";
+import i18n from '../i18n';
+import { useI18n } from 'vue-i18n';
+
 
 export default {
   name: "TicketDashboard",
@@ -289,6 +299,27 @@ export default {
     const itemsPerPage = ref(10);
     const currentNotificationsPage = ref(1);
     const isLoading = ref(false);
+
+    const { t, locale } = useI18n({ useScope: 'global' });
+    const currentLocale = computed(() => locale.value);
+
+    const setLocale = async (newLocale) => {
+      if (locale.value === newLocale) return;
+
+      const messages = import.meta.glob('../i18n/locales/*.json');
+      const path = `../i18n/locales/${newLocale}.json`;
+      const loader = messages[path];
+
+      if (!loader) {
+        console.error(`Locale ${newLocale} not found`);
+        return;
+      }
+
+      const mod = await loader();
+      i18n.global.setLocaleMessage(newLocale, mod.default);
+      locale.value = newLocale;
+      localStorage.setItem('locale', newLocale);
+    };
 
     const filteredUsers = computed(() => {
       return users.value.filter(user => user.RoleID !== 1);
@@ -432,9 +463,8 @@ export default {
 
     const getStatusClass = (status) => {
       switch (status) {
-        case 'Новий': return 'status-new';
-        case 'Оновлено': return 'status-in-progress';
-        case 'Завершено': return 'status-completed';
+        case t('New'): return 'status-new';
+        case t('Updated'): return 'status-in-progress';
         default: return '';
       }
     };
@@ -552,7 +582,7 @@ export default {
       itemsPerPage,
 
       filteredUsers,
-      truncateTitle
+      setLocale
     };
   }
 };

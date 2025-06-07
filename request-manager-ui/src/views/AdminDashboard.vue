@@ -1,437 +1,354 @@
 <template>
   <div class="admin-dashboard">
     <div class="admin-dashboard-card">
-    <header class="admin-header">
-      <h1>Адмін Панель Управління</h1>
-      <button class="logout-btn" @click="authStore.logout()">
-        <i class="fas fa-sign-out-alt"></i> Вийти
-      </button>
-    </header>
-
-    <!-- Users Section -->
-    <section class="users-section" v-if="users.length > 0">
-      <div class="section-header">
-        <h2>Користувачі</h2>
-        <button class="create-btn" @click="showCreateUserModal = true">
-          <i class="fas fa-plus"></i> Додати користувача
+      <header class="admin-header">
+        <div class="language-switcher">
+          <button @click="setLocale('ua')" :class="{ active: currentLocale === 'ua' }">{{ $t('ukrainian') }}</button>
+          <button @click="setLocale('en')" :class="{ active: currentLocale === 'en' }">{{ $t('english') }}</button>
+        </div>
+        <h1>{{ $t('adminPanelTitle') }}</h1>
+        <button class="logout-btn" @click="authStore.logout()">
+          <i class="fas fa-sign-out-alt"></i> {{ $t('logout') }}
         </button>
-      </div>
-      <div class="table-container">
-        <table class="data-table">
-          <thead>
-          <tr>
-            <th>Ім'я</th>
-            <th>Прізвище</th>
-            <th>Юзернейм</th>
-            <th>Пошта</th>
-            <th>Роль</th>
-            <th>Час створення</th>
-            <th>Час оновлення</th>
-            <th>Дії</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr v-for="user in paginatedUsers" :key="user.UserID">
-            <td>{{ user.FirstName }}</td>
-            <td>{{ user.LastName }}</td>
-            <td>{{ user.Username }}</td>
-            <td>{{ user.Email }}</td>
-            <td>
-                <span :class="['role-badge', {'admin': user.RoleID === 1, 'user': user.RoleID === 2}]">
-                  {{ user.RoleID === 1 ? 'Адмін' : user.RoleID === 2 ? 'Користувач' : 'Невідома роль' }}
-                </span>
-            </td>
-            <td>{{ formatDate(user.CreatedAt) }}</td>
-            <td>{{ formatDate(user.UpdatedAt) }}</td>
-            <td class="actions">
-              <button class="edit-btn" @click="editUser(user)">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="delete-btn" @click="confirmDelete('user', user.UserID, user.Username)">
-                <i class="fas fa-trash-alt"></i>
-              </button>
-            </td>
-          </tr>
-          </tbody>
-        </table>
-        <div class="pagination-controls" v-if="totalUsersPages > 1">
-          <button class="pagination-btn" @click="prevUsersPage" :disabled="currentUsersPage === 1">
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          <span class="page-info">
-            Сторінка {{ currentUsersPage }} з {{ totalUsersPages }}
-          </span>
-          <button class="pagination-btn" @click="nextUsersPage" :disabled="currentUsersPage === totalUsersPages">
-            <i class="fas fa-chevron-right"></i>
+      </header>
+
+      <!-- Users Section -->
+      <section class="users-section" v-if="users.length > 0">
+        <div class="section-header">
+          <h2>{{ $t('users') }}</h2>
+          <button class="create-btn" @click="showCreateUserModal = true">
+            <i class="fas fa-plus"></i> {{ $t('addUser') }}
           </button>
         </div>
-      </div>
-    </section>
-    <div class="empty-state" v-else>
-      <i class="fas fa-users empty-icon"></i>
-      <p>Немає користувачів</p>
-    </div>
-
-    <!-- Tickets Section -->
-    <section class="tickets-section">
-      <div class="section-header">
-        <h2>Тікети</h2>
-      </div>
-
-      <!-- Filter Controls -->
-      <div class="ticket-filters">
-        <div class="filter-group">
-        <label for="assignee-filter">Призначено:</label>
-        <input
-            id="assignee-filter"
-            v-model="filters.assignee"
-            type="text"
-            placeholder="Фільтр по призначеному"
-            @input="applyFilters"
-        >
-      </div>
-        <div class="filter-group">
-          <label for="sender-filter">Відправник:</label>
-          <input
-              id="sender-filter"
-              v-model="filters.sender"
-              type="text"
-              placeholder="Фільтр по відправнику"
-              @input="applyFilters"
-          >
-        </div>
-        <div class="filter-group">
-          <label for="status-filter">Статус:</label>
-          <select
-              id="status-filter"
-              v-model="filters.status"
-              @change="applyFilters"
-          >
-            <option value="">Всі статуси</option>
-            <option v-for="status in statusOptions" :key="status" :value="status">
-              {{ status }}
-            </option>
-          </select>
-        </div>
-
-        <button class="reset-btn" @click="resetFilters">
-          <i class="fas fa-times"></i> Скинути
-        </button>
-      </div>
-
-      <!-- Tickets Table -->
-      <div class="table-container" v-if="tickets.length > 0">
-        <table class="data-table">
-          <thead>
-          <tr>
-            <th>Назва</th>
-            <th>Опис</th>
-            <th>Статус</th>
-            <th>Призначено</th>
-            <th>Відправник</th>
-            <th>Створено</th>
-            <th>Оновлено</th>
-            <th>Дії</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr v-for="ticket in paginatedTickets" :key="ticket.TicketID">
-            <td>{{ ticket.Title }}</td>
-            <td class="ticket-description">
-                <span class="description-text">
-                  {{ truncateDescription(ticket.Description, ticket.TicketID) }}
-                </span>
-              <button
-                  v-if="ticket.Description && ticket.Description.length > 100"
-                  class="show-more-btn"
-                  @click="toggleDescription(ticket.TicketID)"
-              >
-                {{ expandedDescriptions[ticket.TicketID] ? '▲' : '▼' }}
-              </button>
-            </td>
-            <td>
-                <span :class="['status-badge', getStatusClass(ticket.Status)]">
-                  {{ ticket.Status }}
-                </span>
-            </td>
-            <td>{{ ticket.AssigneeUsername }}</td>
-            <td>{{ ticket.SenderUsername }}</td>
-            <td>{{ formatDate(ticket.CreatedAt) }}</td>
-            <td>{{ formatDate(ticket.UpdatedAt) }}</td>
-            <td class="actions">
-              <button class="action-btn delete-btn" @click="confirmDelete('ticket', ticket.TicketID, ticket.Title)" title="Видалити">
-                <i class="fas fa-trash-alt"></i>
-              </button>
-            </td>
-          </tr>
-          </tbody>
-        </table>
-
-        <!-- Pagination Controls -->
-        <div class="pagination-controls" v-if="totalPages > 1">
-          <button class="pagination-btn" @click="prevPage" :disabled="currentPage === 1">
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          <span class="page-info">
-            Сторінка {{ currentPage }} з {{ totalPages }}
-          </span>
-          <button class="pagination-btn" @click="nextPage" :disabled="currentPage === totalPages">
-            <i class="fas fa-chevron-right"></i>
-          </button>
-        </div>
-      </div>
-
-      <div class="empty-state" v-else>
-        <i class="fas fa-ticket-alt empty-icon"></i>
-        <p>Тікети не знайдено</p>
-        <button class="reset-btn" @click="resetFilters">
-          <i class="fas fa-times"></i> Скинути фільтри
-        </button>
-      </div>
-    </section>
-
-    <!-- Notifications Section -->
-    <section class="notifications-section" v-if="notifications.length > 0">
-      <h2>Сповіщення</h2>
-      <div class="notifications-list">
-        <div v-for="notification in paginatedNotifications" :key="notification.NotificationID" class="notification-item">
-          <div class="notification-content">
-            <p class="notification-message">{{ notification.Message }}</p>
-            <span class="notification-time">{{ formatDate(notification.CreatedAt) }}</span>
-          </div>
-          <button class="action-btn small delete" @click="confirmDelete('notification', notification.NotificationID, 'сповіщення')">
-            <i class="fas fa-trash-alt"></i>
-          </button>
-        </div>
-        <div class="pagination-controls" v-if="notifications.length > itemsPerPage">
-          <button class="pagination-btn" @click="prevNotificationsPage" :disabled="currentNotificationsPage === 1">
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          <span class="page-info">
-          Сторінка {{ currentNotificationsPage }} з {{ totalNotificationsPages }}
-        </span>
-          <button class="pagination-btn" @click="nextNotificationsPage" :disabled="currentNotificationsPage === totalNotificationsPages">
-            <i class="fas fa-chevron-right"></i>
-          </button>
-        </div>
-      </div>
-
-    </section>
-    <div class="empty-state" v-else>
-      <i class="fas fa-bell empty-icon"></i>
-      <p>Немає сповіщень</p>
-    </div>
-
-    <!-- Data Management Section -->
-    <section class="data-management-section">
-      <div class="section-header">
-        <h2>Управління Даними</h2>
-      </div>
-
-      <div class="data-grid">
-        <div class="data-card" @click="backupData">
-          <div class="card-icon backup">
-            <i class="fas fa-database"></i>
-          </div>
-          <h3>Резервна копія</h3>
-          <p>Створення повної резервної копії системи</p>
-        </div>
-
-        <div class="data-card" @click="restoreData">
-          <div class="card-icon restore">
-            <i class="fas fa-redo"></i>
-          </div>
-          <h3>Відновлення</h3>
-          <p>Відновлення системи з резервної копії</p>
-        </div>
-
-        <div class="data-card" @click="exportData">
-          <div class="card-icon export">
-            <i class="fas fa-file-export"></i>
-          </div>
-          <h3>Експорт</h3>
-          <p>Експорт даних у зовнішній формат</p>
-        </div>
-
-        <div class="data-card" @click="importData">
-          <div class="card-icon import">
-            <i class="fas fa-file-import"></i>
-          </div>
-          <h3>Імпорт</h3>
-          <p>Імпорт даних з зовнішніх джерел</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Create User Modal -->
-    <transition name="modal-fade">
-      <div
-          v-if="showCreateUserModal"
-          class="modal-overlay"
-          @mousedown="closeModalOnOutsideClick($event, 'create')"
-      >
-        <div class="modal">
-          <div class="modal-header">
-            <h3>Створити нового користувача</h3>
-            <button class="close-btn" @click="showCreateUserModal = false">
-              <i class="fas fa-times"></i>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+            <tr>
+              <th>{{ $t('firstName') }}</th>
+              <th>{{ $t('lastName') }}</th>
+              <th>{{ $t('username') }}</th>
+              <th>{{ $t('email') }}</th>
+              <th>{{ $t('role') }}</th>
+              <th>{{ $t('createdAt') }}</th>
+              <th>{{ $t('updatedAt') }}</th>
+              <th>{{ $t('actions') }}</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="user in paginatedUsers" :key="user.UserID">
+              <td>{{ user.FirstName }}</td>
+              <td>{{ user.LastName }}</td>
+              <td>{{ user.Username }}</td>
+              <td>{{ user.Email }}</td>
+              <td>
+                  <span :class="['role-badge', {'admin': user.RoleID === 1, 'user': user.RoleID === 2}]">
+                    {{ user.RoleID === 1 ? $t('admin') : user.RoleID === 2 ? $t('user') : $t('unknownRole') }}
+                  </span>
+              </td>
+              <td>{{ formatDate(user.CreatedAt) }}</td>
+              <td>{{ formatDate(user.UpdatedAt) }}</td>
+              <td class="actions">
+                <button class="edit-btn" @click="editUser(user)">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="delete-btn" @click="confirmDelete('user', user.UserID, user.Username)">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+          <div class="pagination-controls" v-if="totalUsersPages > 1">
+            <button class="pagination-btn" @click="prevUsersPage" :disabled="currentUsersPage === 1">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <span class="page-info">
+              {{ $t('pageInfo', { current: currentUsersPage, total: totalUsersPages }) }}
+            </span>
+            <button class="pagination-btn" @click="nextUsersPage" :disabled="currentUsersPage === totalUsersPages">
+              <i class="fas fa-chevron-right"></i>
             </button>
           </div>
-          <div class="modal-body">
-            <form @submit.prevent="submitCreateUser">
-              <div class="form-group">
-                <label>Ім'я</label>
-                <input v-model="newUser.FirstName" type="text" placeholder="Введіть ім'я" required />
-              </div>
-              <div class="form-group">
-                <label>Прізвище</label>
-                <input v-model="newUser.LastName" type="text" placeholder="Введіть прізвище" required />
-              </div>
-              <div class="form-group">
-                <label>Юзернейм</label>
-                <input v-model="newUser.Username" type="text" placeholder="Введіть юзернейм" required />
-              </div>
-              <div class="form-group">
-                <label>Email</label>
-                <input v-model="newUser.Email" type="email" placeholder="Введіть email" required />
-              </div>
-              <div class="form-group">
-                <div class="input-group">
-                  <label for="password">Пароль</label>
-                  <div class="password-wrapper">
-                    <input
-                        :type="isPasswordVisible ? 'text' : 'password'"
-                        v-model="newUser.Password"
-                        @input="validatePassword(newUser.Password, 'create')"
-                    />
-                    <button
-                        type="button"
-                        @click="togglePasswordVisibility"
-                        class="eye-button"
-                        :class="{ 'active': isPasswordVisible }"
-                    >
-                      <i class="fas" :class="isPasswordVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
-                    </button>
-                  </div>
+        </div>
+      </section>
+      <div class="empty-state" v-else>
+        <i class="fas fa-users empty-icon"></i>
+        <p>{{ $t('noUsers') }}</p>
+      </div>
 
-                  <div class="password-strength">
-                    <div class="strength-bar" :class="{
-        'weak': passwordStrength === 1,
-        'medium': passwordStrength === 2 || passwordStrength === 3,
-        'strong': passwordStrength === 4
-      }"></div>
-                    <div class="strength-labels">
-                      <span :class="{ 'active': passwordStrength > 0 }">Мінімум</span>
-                      <span :class="{ 'active': passwordStrength > 1 }">Буква</span>
-                      <span :class="{ 'active': passwordStrength > 2 }">Цифра</span>
-                      <span :class="{ 'active': passwordStrength > 3 }">Спецсимвол</span>
-                    </div>
-                  </div>
+      <!-- Tickets Section -->
+      <section class="tickets-section">
+        <div class="section-header">
+          <h2>{{ $t('tickets') }}</h2>
+        </div>
 
-                  <div v-if="passwordErrors.create?.length" class="error-messages">
-                    <p v-for="error in passwordErrors.create" :key="error" class="error-text">{{ error }}</p>
-                  </div>
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Роль</label>
-                <select v-model="newUser.RoleID" required>
-                  <option value="2">Користувач</option>
-                  <option value="1">Адміністратор</option>
-                </select>
-              </div>
-              <div class="form-actions">
-                <button type="button" class="cancel-btn" @click="resetNewUserForm; showCreateUserModal = false">
-                  Скасувати
+        <!-- Filter Controls -->
+        <div class="ticket-filters">
+          <div class="filter-group">
+            <label for="assignee-filter">{{ $t('assignee') }}:</label>
+            <input
+                id="assignee-filter"
+                v-model="filters.assignee"
+                type="text"
+                :placeholder="$t('assigneeFilterPlaceholder')"
+                @input="applyFilters"
+            >
+          </div>
+          <div class="filter-group">
+            <label for="sender-filter">{{ $t('sender') }}:</label>
+            <input
+                id="sender-filter"
+                v-model="filters.sender"
+                type="text"
+                :placeholder="$t('senderFilterPlaceholder')"
+                @input="applyFilters"
+            >
+          </div>
+          <div class="filter-group">
+            <label for="status-filter">{{ $t('status') }}:</label>
+            <select
+                id="status-filter"
+                v-model="filters.status"
+                @change="applyFilters"
+            >
+              <option value="">{{ $t('allStatuses') }}</option>
+              <option v-for="status in statusOptions" :key="status" :value="status">
+                {{ $t(status) }}
+              </option>
+            </select>
+          </div>
+
+          <button class="reset-btn" @click="resetFilters">
+            <i class="fas fa-times"></i> {{ $t('resetFilters') }}
+          </button>
+        </div>
+
+        <!-- Tickets Table -->
+        <div class="table-container" v-if="tickets.length > 0">
+          <table class="data-table">
+            <thead>
+            <tr>
+              <th>{{ $t('title') }}</th>
+              <th>{{ $t('description') }}</th>
+              <th>{{ $t('status') }}</th>
+              <th>{{ $t('assignee') }}</th>
+              <th>{{ $t('sender') }}</th>
+              <th>{{ $t('createdAt') }}</th>
+              <th>{{ $t('updatedAt') }}</th>
+              <th>{{ $t('actions') }}</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="ticket in paginatedTickets" :key="ticket.TicketID">
+              <td>{{ ticket.Title }}</td>
+              <td class="ticket-description">
+                  <span class="description-text">
+                    {{ truncateDescription(ticket.Description, ticket.TicketID) }}
+                  </span>
+                <button
+                    v-if="ticket.Description && ticket.Description.length > 100"
+                    class="show-more-btn"
+                    @click="toggleDescription(ticket.TicketID)"
+                >
+                  {{ expandedDescriptions[ticket.TicketID] ? '▲' : '▼' }}
                 </button>
-                <button type="submit" class="submit-btn">Створити</button>
-              </div>
-            </form>
+              </td>
+              <td>
+                  <span :class="['status-badge', getStatusClass(ticket.Status)]">
+                    {{ $t(ticket.Status) }}
+                  </span>
+              </td>
+              <td>{{ ticket.AssigneeUsername }}</td>
+              <td>{{ ticket.SenderUsername }}</td>
+              <td>{{ formatDate(ticket.CreatedAt) }}</td>
+              <td>{{ formatDate(ticket.UpdatedAt) }}</td>
+              <td class="actions">
+                <button class="action-btn delete-btn" @click="confirmDelete('ticket', ticket.TicketID, ticket.Title)" :title="$t('delete')">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+
+          <!-- Pagination Controls -->
+          <div class="pagination-controls" v-if="totalPages > 1">
+            <button class="pagination-btn" @click="prevPage" :disabled="currentPage === 1">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <span class="page-info">
+              {{ $t('pageInfo', { current: currentPage, total: totalPages }) }}
+            </span>
+            <button class="pagination-btn" @click="nextPage" :disabled="currentPage === totalPages">
+              <i class="fas fa-chevron-right"></i>
+            </button>
           </div>
         </div>
-      </div>
-    </transition>
 
-      <!-- Edit User Modal -->
+        <div class="empty-state" v-else>
+          <i class="fas fa-ticket-alt empty-icon"></i>
+          <p>{{ $t('noTickets') }}</p>
+          <button class="reset-btn" @click="resetFilters">
+            <i class="fas fa-times"></i> {{ $t('resetFiltersButton') }}
+          </button>
+        </div>
+      </section>
+
+      <!-- Notifications Section -->
+      <section class="notifications-section" v-if="notifications.length > 0">
+        <h2>{{ $t('notifications') }}</h2>
+        <div class="notifications-list">
+          <div v-for="notification in paginatedNotifications" :key="notification.NotificationID" class="notification-item">
+            <div class="notification-content">
+              <p class="notification-message">{{ notification.Message }}</p>
+              <span class="notification-time">{{ formatDate(notification.CreatedAt) }}</span>
+            </div>
+            <button class="action-btn small delete" @click="confirmDelete('notification', notification.NotificationID, $t('notification'))">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </div>
+          <div class="pagination-controls" v-if="notifications.length > itemsPerPage">
+            <button class="pagination-btn" @click="prevNotificationsPage" :disabled="currentNotificationsPage === 1">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <span class="page-info">
+              {{ $t('pageInfo', { current: currentNotificationsPage, total: totalNotificationsPages }) }}
+            </span>
+            <button class="pagination-btn" @click="nextNotificationsPage" :disabled="currentNotificationsPage === totalNotificationsPages">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+      <div class="empty-state" v-else>
+        <i class="fas fa-bell empty-icon"></i>
+        <p>{{ $t('noNotifications') }}</p>
+      </div>
+
+      <!-- Data Management Section -->
+      <section class="data-management-section">
+        <div class="section-header">
+          <h2>{{ $t('dataManagement') }}</h2>
+        </div>
+
+        <div class="data-grid">
+          <div class="data-card" @click="backupData">
+            <div class="card-icon backup">
+              <i class="fas fa-database"></i>
+            </div>
+            <h3>{{ $t('backup') }}</h3>
+            <p>{{ $t('backupDescription') }}</p>
+          </div>
+
+          <div class="data-card" @click="restoreData">
+            <div class="card-icon restore">
+              <i class="fas fa-redo"></i>
+            </div>
+            <h3>{{ $t('restore') }}</h3>
+            <p>{{ $t('restoreDescription') }}</p>
+          </div>
+
+          <div class="data-card" @click="exportData">
+            <div class="card-icon export">
+              <i class="fas fa-file-export"></i>
+            </div>
+            <h3>{{ $t('export') }}</h3>
+            <p>{{ $t('exportDescription') }}</p>
+          </div>
+
+          <div class="data-card" @click="importData">
+            <div class="card-icon import">
+              <i class="fas fa-file-import"></i>
+            </div>
+            <h3>{{ $t('import') }}</h3>
+            <p>{{ $t('importDescription') }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Create User Modal -->
       <transition name="modal-fade">
-        <div v-if="editUserData" class="modal-overlay" @click.self="editUserData = null">
+        <div
+            v-if="showCreateUserModal"
+            class="modal-overlay"
+            @mousedown="closeModalOnOutsideClick($event, 'create')"
+        >
           <div class="modal">
             <div class="modal-header">
-              <h3>Редагувати користувача</h3>
-              <button class="close-btn" @click="editUserData = null">
+              <h3>{{ $t('createUserTitle') }}</h3>
+              <button class="close-btn" @click="showCreateUserModal = false">
                 <i class="fas fa-times"></i>
               </button>
             </div>
             <div class="modal-body">
-              <form @submit.prevent="submitEditUser">
-                <!-- Existing fields -->
+              <form @submit.prevent="submitCreateUser">
                 <div class="form-group">
-                  <label>Ім'я</label>
-                  <input v-model="editUserData.FirstName" type="text" placeholder="Введіть ім'я" required />
+                  <label>{{ $t('firstName') }}</label>
+                  <input v-model="newUser.FirstName" type="text" :placeholder="$t('enterFirstName')" required />
                 </div>
                 <div class="form-group">
-                  <label>Прізвище</label>
-                  <input v-model="editUserData.LastName" type="text" placeholder="Введіть прізвище" required />
+                  <label>{{ $t('lastName') }}</label>
+                  <input v-model="newUser.LastName" type="text" :placeholder="$t('enterLastName')" required />
                 </div>
                 <div class="form-group">
-                  <label>Юзернейм</label>
-                  <input v-model="editUserData.Username" type="text" placeholder="Введіть юзернейм" required />
+                  <label>{{ $t('username') }}</label>
+                  <input v-model="newUser.Username" type="text" :placeholder="$t('enterUsername')" required />
                 </div>
                 <div class="form-group">
-                  <label>Email</label>
-                  <input v-model="editUserData.Email" type="email" placeholder="Введіть email" required />
+                  <label>{{ $t('email') }}</label>
+                  <input v-model="newUser.Email" type="email" :placeholder="$t('enterEmail')" required />
                 </div>
-
-                <!-- New password field -->
                 <div class="form-group">
-                  <label>Новий пароль (залиште порожнім, щоб не змінювати)</label>
+                  <label>{{ $t('passwordLabel') }}</label>
                   <div class="input-group">
                     <div class="password-wrapper">
                       <input
-                          :type="isPasswordVisible ? 'text' : 'password'"
-                          v-model="editUserData.Password"
-                          @input="validatePassword(editUserData.Password, 'edit')"
+                          :type="isPasswordVisible.create ? 'text' : 'password'"
+                          v-model="newUser.Password"
+                          @input="validatePassword(newUser.Password, 'create')"
+                          :placeholder="$t('passwordMinLength')"
                       />
                       <button
                           type="button"
-                          @click="togglePasswordVisibility"
+                          @click="togglePasswordVisibility('create')"
                           class="eye-button"
-                          :class="{ 'active': isPasswordVisible }"
+                          :class="{ 'active': isPasswordVisible.create  }"
                       >
-                        <i class="fas" :class="isPasswordVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
+                        <i class="fas" :class="isPasswordVisible.create  ? 'fa-eye-slash' : 'fa-eye'"></i>
                       </button>
                     </div>
 
-                    <div class="password-strength" v-if="editUserData.Password">
+                    <div class="password-strength">
                       <div class="strength-bar" :class="{
-                  'weak': passwordStrength === 1,
-                  'medium': passwordStrength === 2 || passwordStrength === 3,
-                  'strong': passwordStrength === 4
-                }"></div>
+                          'weak': passwordStrength === 1,
+                          'medium': passwordStrength === 2 || passwordStrength === 3,
+                          'strong': passwordStrength === 4
+                        }"></div>
                       <div class="strength-labels">
-                        <span :class="{ 'active': passwordStrength > 0 }">Мінімум</span>
-                        <span :class="{ 'active': passwordStrength > 1 }">Буква</span>
-                        <span :class="{ 'active': passwordStrength > 2 }">Цифра</span>
-                        <span :class="{ 'active': passwordStrength > 3 }">Спецсимвол</span>
+                        <span :class="{ 'active': passwordStrength > 0 }">{{ $t('passwordMinLength') }}</span>
+                        <span :class="{ 'active': passwordStrength > 1 }">{{ $t('passwordLetter') }}</span>
+                        <span :class="{ 'active': passwordStrength > 2 }">{{ $t('passwordDigit') }}</span>
+                        <span :class="{ 'active': passwordStrength > 3 }">{{ $t('passwordSpecialChar') }}</span>
                       </div>
                     </div>
 
-                    <div v-if="passwordErrors.edit?.length" class="error-messages">
-                      <p v-for="error in passwordErrors.edit" :key="error" class="error-text">{{ error }}</p>
+                    <div v-if="passwordErrors.create?.length" class="error-messages">
+                      <p v-for="error in passwordErrors.create" :key="error" class="error-text">{{ $t(error) }}</p>
                     </div>
                   </div>
                 </div>
-
                 <div class="form-group">
-                  <label>Роль</label>
-                  <select v-model="editUserData.RoleID" required>
-                    <option value="2">Користувач</option>
-                    <option value="1">Адміністратор</option>
+                  <label>{{ $t('role') }}</label>
+                  <select v-model="newUser.RoleID" required>
+                    <option value="2">{{ $t('user') }}</option>
+                    <option value="1">{{ $t('admin') }}</option>
                   </select>
                 </div>
                 <div class="form-actions">
-                  <button type="button" class="cancel-btn" @click="editUserData = null">Скасувати</button>
-                  <button type="submit" class="submit-btn">Зберегти</button>
+                  <button type="button" class="cancel-btn" @click="resetNewUserForm; showCreateUserModal = false">
+                    {{ $t('cancel') }}
+                  </button>
+                  <button type="submit" class="submit-btn">{{ $t('create') }}</button>
                 </div>
               </form>
             </div>
@@ -439,24 +356,112 @@
         </div>
       </transition>
 
-    <!-- Confirmation Modal -->
-    <transition name="modal-fade">
-      <div v-if="confirmModal.show" class="modal-overlay" @click.self="confirmModal.show = false">
-        <div class="confirm-modal">
-          <div class="modal-header">
-            <h3>Підтвердження дії</h3>
-          </div>
-          <div class="modal-body">
-            <p>Ви дійсно хочете видалити {{ confirmModal.type === 'user' ? 'користувача' :
-                confirmModal.type === 'ticket' ? 'тікет' : 'сповіщення' }} <strong>"{{ confirmModal.name }}"</strong>?</p>
-          </div>
-          <div class="modal-footer">
-            <button class="cancel-btn" @click="confirmModal.show = false">Скасувати</button>
-            <button class="confirm-btn" @click="executeDelete">Видалити</button>
+      <!-- Edit User Modal -->
+      <transition name="modal-fade">
+        <div v-if="editUserData" class="modal-overlay" @click.self="editUserData = null">
+          <div class="modal">
+            <div class="modal-header">
+              <h3>{{ $t('editUserTitle') }}</h3>
+              <button class="close-btn" @click="editUserData = null">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="modal-body">
+              <form @submit.prevent="submitEditUser">
+                <div class="form-group">
+                  <label>{{ $t('firstName') }}</label>
+                  <input v-model="editUserData.FirstName" type="text" :placeholder="$t('enterFirstName')" required />
+                </div>
+                <div class="form-group">
+                  <label>{{ $t('lastName') }}</label>
+                  <input v-model="editUserData.LastName" type="text" :placeholder="$t('enterLastName')" required />
+                </div>
+                <div class="form-group">
+                  <label>{{ $t('username') }}</label>
+                  <input v-model="editUserData.Username" type="text" :placeholder="$t('enterUsername')" required />
+                </div>
+                <div class="form-group">
+                  <label>{{ $t('email') }}</label>
+                  <input v-model="editUserData.Email" type="email" :placeholder="$t('enterEmail')" required />
+                </div>
+
+                <div class="form-group">
+                  <label>{{ $t('newPasswordPlaceholder') }}</label>
+                  <div class="input-group">
+                    <div class="password-wrapper">
+                      <input
+                          :type="isPasswordVisible.edit ? 'text' : 'password'"
+                          v-model="editUserData.Password"
+                          @input="validatePassword(editUserData.Password, 'edit')"
+                          :placeholder="$t('passwordMinLength')"
+                      />
+                      <button
+                          type="button"
+                          @click="togglePasswordVisibility('edit')"
+                          class="eye-button"
+                          :class="{ 'active': isPasswordVisible.edit }"
+                      >
+                        <i class="fas" :class="isPasswordVisible.edit ? 'fa-eye-slash' : 'fa-eye'"></i>
+                      </button>
+                    </div>
+
+                    <div class="password-strength" v-if="editUserData.Password">
+                      <div class="strength-bar" :class="{
+                          'weak': passwordStrength === 1,
+                          'medium': passwordStrength === 2 || passwordStrength === 3,
+                          'strong': passwordStrength === 4
+                        }"></div>
+                      <div class="strength-labels">
+                        <span :class="{ 'active': passwordStrength > 0 }">{{ $t('passwordMinLength') }}</span>
+                        <span :class="{ 'active': passwordStrength > 1 }">{{ $t('passwordLetter') }}</span>
+                        <span :class="{ 'active': passwordStrength > 2 }">{{ $t('passwordDigit') }}</span>
+                        <span :class="{ 'active': passwordStrength > 3 }">{{ $t('passwordSpecialChar') }}</span>
+                      </div>
+                    </div>
+
+                    <div v-if="passwordErrors.edit?.length" class="error-messages">
+                      <p v-for="error in passwordErrors.edit" :key="error" class="error-text">{{ $t(error) }}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>{{ $t('role') }}</label>
+                  <select v-model="editUserData.RoleID" required>
+                    <option value="2">{{ $t('user') }}</option>
+                    <option value="1">{{ $t('admin') }}</option>
+                  </select>
+                </div>
+                <div class="form-actions">
+                  <button type="button" class="cancel-btn" @click="editUserData = null">{{ $t('cancel') }}</button>
+                  <button type="submit" class="submit-btn">{{ $t('save') }}</button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
-      </div>
-    </transition>
+      </transition>
+
+      <!-- Confirmation Modal -->
+      <transition name="modal-fade">
+        <div v-if="confirmModal.show" class="modal-overlay" @click.self="confirmModal.show = false">
+          <div class="confirm-modal">
+            <div class="modal-header">
+              <h3>{{ $t('confirmationTitle') }}</h3>
+            </div>
+            <div class="modal-body">
+              <p>{{ $t('confirmationMessage', {
+                type: $t(confirmModal.type),
+                name: confirmModal.name
+              }) }}</p>
+            </div>
+            <div class="modal-footer">
+              <button class="cancel-btn" @click="confirmModal.show = false">{{ $t('cancel') }}</button>
+              <button class="confirm-btn" @click="executeDelete">{{ $t('delete') }}</button>
+            </div>
+          </div>
+        </div>
+      </transition>
     </div>
   </div>
 </template>
@@ -467,6 +472,8 @@ import { adminApi } from "../api";
 import { format } from 'date-fns';
 import { useAuthStore } from '../store/auth';
 import { useRouter } from 'vue-router';
+import i18n from '../i18n';
+import { useI18n } from 'vue-i18n';
 export default {
   name: "AdminDashboard",
   setup() {
@@ -482,6 +489,7 @@ export default {
     const showCreateUserModal = ref(false);
     const authStore = useAuthStore();
     const router = useRouter();
+    const { t, locale } = useI18n({ useScope: 'global' });
     const statusOptions = ref(['Новий', 'Оновлено']);
     const expandedDescriptions = ref({});
     const currentPage = ref(1);
@@ -511,6 +519,27 @@ export default {
       }
     };
 
+
+
+    const currentLocale = computed(() => locale.value);
+
+    const setLocale = async (newLocale) => {
+      if (locale.value === newLocale) return;
+
+      const messages = import.meta.glob('../i18n/locales/*.json');
+      const path = `../i18n/locales/${newLocale}.json`;
+      const loader = messages[path];
+
+      if (!loader) {
+        console.error(`Locale ${newLocale} not found`);
+        return;
+      }
+
+      const mod = await loader();
+      i18n.global.setLocaleMessage(newLocale, mod.default);
+      locale.value = newLocale;
+      localStorage.setItem('locale', newLocale);
+    };
 
     const resetNewUserForm = () => {
       newUser.value = {
@@ -546,30 +575,29 @@ export default {
       if (password.length >= 8) {
         strength++;
       } else {
-        passwordErrors[type].push("Пароль повинен містити щонайменше 8 символів");
+        passwordErrors[type].push(t('passwordValidation.minLength'));
       }
 
       if (/[a-zA-Z]/.test(password)) {
         strength++;
       } else {
-        passwordErrors[type].push("Пароль повинен містити щонайменше 1 літеру");
+        passwordErrors[type].push(t('passwordValidation.letter'));
       }
 
       if (/\d/.test(password)) {
         strength++;
       } else {
-        passwordErrors[type].push("Пароль повинен містити щонайменше 1 цифру");
+        passwordErrors[type].push(t('passwordValidation.digit'));
       }
 
       if (/[^a-zA-Z0-9\s]/.test(password)) {
         strength++;
       } else {
-        passwordErrors[type].push("Пароль повинен містити щонайменше 1 спецсимвол");
+        passwordErrors[type].push(t('passwordValidation.specialChar'));
       }
 
       passwordStrength.value = strength;
     };
-
 
 
     const resetEditPasswordFields = () => {
@@ -580,8 +608,8 @@ export default {
       passwordErrors.edit = [];
       passwordStrength.value = 0;
     };
-    const togglePasswordVisibility = () => {
-      isPasswordVisible.value = !isPasswordVisible.value;
+    const togglePasswordVisibility = (type) => {
+      isPasswordVisible[type] = !isPasswordVisible[type];
     };
 
     const filters = ref({
@@ -1032,7 +1060,9 @@ export default {
       hasMinLength,
       hasLetter,
       hasNumber,
-      hasSpecialChar
+      hasSpecialChar,
+
+      setLocale
     };
   }
 };

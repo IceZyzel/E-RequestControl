@@ -9,4 +9,7 @@ export default defineConfig({
     allowedHosts: ["www.zyzel.de"],
 
   },
+  json: {
+    stringify: true
+  }
 });

@@ -10,11 +10,11 @@ services:
     depends_on:
       - db
     environment:
-      - DB_HOST=req-db
-      - DB_PORT=3306 # Используем правильный внутренний порт
-      - DB_USER=root
-      - DB_PASSWORD=123123
-      - DB_NAME=request_manager
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
     networks:
       - my-network
 
@@ -23,10 +23,10 @@ services:
     container_name: req-db
     restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD=123123
-      - MYSQL_DATABASE=request_manager
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
     ports:
-      - "3308:3306" # Внешний порт 3308 для доступа из-за пределов Docker
+      - "3308:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     networks:
@@ -36,11 +36,14 @@ services:
     build: ./request-manager-ui
     container_name: req-front
     ports:
-      - "5173:5173" # Открываем порт Vite
+      - "5173:5173"
     depends_on:
       - app
     networks:
       - my-network
+    environment:
+      - VUE_APP_I18N_LOCALE=ua
+      - VUE_APP_I18N_FALLBACK_LOCALE=en
 
 volumes:
   mysql-data:

@@ -72,3 +72,31 @@ li button {
 li button:hover {
     background-color: #d32f2f;
 }
+.language-switcher {
+    display: flex;
+    justify-content: right;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.language-switcher button {
+    background: none;
+    border: 1px solid #3498db;
+    color: #3498db;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 5px 15px;
+    border-radius: 20px;
+    transition: all 0.3s;
+}
+
+.language-switcher button:hover {
+    background: #f0f8ff;
+}
+
+.language-switcher button.active {
+    color: white;
+    background: #3498db;
+    font-weight: 600;
+}

@@ -2,8 +2,12 @@
   <div class="auth-container">
     <div class="auth-card">
       <div class="auth-header">
-        <h1>Ласкаво просимо!</h1>
-        <p>Увійдіть у свій акаунт</p>
+        <div class="language-switcher">
+          <button @click="setLocale('ua')" :class="{ active: currentLocale === 'ua' }">{{ $t('ukrainian') }}</button>
+          <button @click="setLocale('en')" :class="{ active: currentLocale === 'en' }">{{ $t('english') }}</button>
+        </div>
+        <h1>{{ $t('welcome') }}</h1>
+        <p>{{ $t('signInMessage') }}</p>
       </div>
 
       <form @submit.prevent="handleSubmit" class="auth-form">
@@ -16,7 +20,7 @@
               class="form-input"
               placeholder=" "
           />
-          <label for="username">Логін</label>
+          <label for="username">{{ $t('username') }}</label>
           <div class="input-border"></div>
         </div>
 
@@ -29,7 +33,7 @@
               class="form-input"
               placeholder=" "
           />
-          <label for="password">Пароль</label>
+          <label for="password">{{ $t('password') }}</label>
           <div class="input-border"></div>
           <button
               type="button"
@@ -42,13 +46,13 @@
 
         <div class="form-footer">
           <button type="submit" class="submit-btn" :disabled="isLoading">
-            <span v-if="!isLoading">Увійти</span>
+            <span v-if="!isLoading">{{ $t('signIn') }}</span>
             <span v-else class="loading-spinner"></span>
           </button>
 
           <div class="auth-links">
             <router-link to="/register" class="auth-link">
-              Немає акаунту? <span>Зареєструватися</span>
+              {{ $t('noAccount') }} <span>{{ $t('register') }}</span>
             </router-link>
           </div>
         </div>
@@ -58,9 +62,34 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../store/auth';
+import i18n from '../i18n';
+import { useI18n } from 'vue-i18n';
+
+
+const { t, locale } = useI18n({ useScope: 'global' });
+
+const currentLocale = computed(() => locale.value);
+
+const setLocale = async (newLocale) => {
+  if (locale.value === newLocale) return;
+
+  const messages = import.meta.glob('../i18n/locales/*.json');
+  const path = `../i18n/locales/${newLocale}.json`;
+  const loader = messages[path];
+
+  if (!loader) {
+    console.error(`Locale ${newLocale} not found`);
+    return;
+  }
+
+  const mod = await loader();
+  i18n.global.setLocaleMessage(newLocale, mod.default);
+  locale.value = newLocale;
+  localStorage.setItem('locale', newLocale);
+};
 
 const username = ref('');
 const password = ref('');
@@ -84,11 +113,9 @@ const handleSubmit = async () => {
 
     if (!success) return;
 
-
     setTimeout(() => {
       router.push(authStore.role === 1 ? '/admin-dashboard' : '/dashboard');
     }, 1500);
-
   } catch (error) {
     showErrorNotification('Помилка входу: ' + (error.response?.data?.message || error.message));
   } finally {
@@ -100,6 +127,7 @@ const showErrorNotification = (message) => {
   alert(message);
 };
 </script>
+
 
 <style scoped>
 *,

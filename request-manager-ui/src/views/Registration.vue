@@ -2,8 +2,12 @@
   <div class="register-container">
     <div class="register-card">
       <div class="register-header">
-        <h1>Створити акаунт</h1>
-        <p>Заповніть форму для реєстрації</p>
+        <div class="language-switcher">
+          <button @click="setLocale('ua')" :class="{ active: currentLocale === 'ua' }">{{ $t('ukrainian') }}</button>
+          <button @click="setLocale('en')" :class="{ active: currentLocale === 'en' }">{{ $t('english') }}</button>
+        </div>
+        <h1>{{ $t('registerTitle') }}</h1>
+        <p>{{ $t('registerSubtitle') }}</p>
       </div>
 
       <form @submit.prevent="registerUser" class="register-form">
@@ -17,7 +21,7 @@
                 class="form-input"
                 placeholder=" "
             />
-            <label for="firstname">Ім'я</label>
+            <label for="firstname">{{ $t('firstname') }}</label>
             <div class="input-border"></div>
           </div>
 
@@ -30,7 +34,7 @@
                 class="form-input"
                 placeholder=" "
             />
-            <label for="lastname">Прізвище</label>
+            <label for="lastname">{{ $t('lastname') }}</label>
             <div class="input-border"></div>
           </div>
 
@@ -43,7 +47,7 @@
                 class="form-input"
                 placeholder=" "
             />
-            <label for="email">Email</label>
+            <label for="email">{{ $t('email') }}</label>
             <div class="input-border"></div>
           </div>
 
@@ -56,7 +60,7 @@
                 class="form-input"
                 placeholder=" "
             />
-            <label for="username">Юзернейм</label>
+            <label for="username">{{ $t('userNameLabel') }}</label>
             <div class="input-border"></div>
           </div>
 
@@ -71,7 +75,7 @@
                   placeholder=" "
                   @input="validatePassword"
               />
-              <label for="password">Пароль</label>
+              <label for="password">{{ $t('passwordLabel') }}</label>
               <div class="input-border"></div>
               <button
                   type="button"
@@ -106,7 +110,7 @@
                   placeholder=" "
                   @input="validatePasswordMatch"
               />
-              <label for="confirmPassword">Підтвердження паролю</label>
+              <label for="confirmPassword">{{ $t('confirmPasswordLabel') }}</label>
               <div class="input-border"></div>
               <button
                   type="button"
@@ -119,30 +123,32 @@
             <transition name="fade">
               <div v-if="passwordMatchError" class="error-message">
                 <i class="fas fa-exclamation-circle"></i>
-                <span>{{ passwordMatchError }}</span>
+                <span>{{ $t('passwordMismatch') }}</span>
               </div>
             </transition>
           </div>
         </div>
 
         <button type="submit" class="submit-btn" :disabled="isLoading">
-          <span v-if="!isLoading">Зареєструватися</span>
+          <span v-if="!isLoading">{{ $t('registerButton') }}</span>
           <span v-else class="loading-spinner"></span>
         </button>
       </form>
 
       <div class="login-redirect">
-        <span>Вже маєте акаунт?</span>
-        <router-link to="/login" class="login-link">Увійти</router-link>
+        <span>{{ $t('alreadyHaveAccount') }}</span>
+        <router-link to="/login" class="login-link">{{ $t('loginLink') }}</router-link>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { authApi } from '../api';
 import { useRouter } from 'vue-router';
+import i18n from '../i18n';
+import { useI18n } from 'vue-i18n';
 
 export default {
   name: 'RegisterUser',
@@ -158,9 +164,31 @@ export default {
     const passwordErrors = ref([]);
     const passwordMatchError = ref('');
     const isLoading = ref(false);
+    const { t, locale } = useI18n({ useScope: 'global' });
+
 
     const togglePasswordVisibility = () => {
       isPasswordVisible.value = !isPasswordVisible.value;
+    };
+
+    const currentLocale = computed(() => locale.value);
+
+    const setLocale = async (newLocale) => {
+      if (locale.value === newLocale) return;
+
+      const messages = import.meta.glob('../i18n/locales/*.json');
+      const path = `../i18n/locales/${newLocale}.json`;
+      const loader = messages[path];
+
+      if (!loader) {
+        console.error(`Locale ${newLocale} not found`);
+        return;
+      }
+
+      const mod = await loader();
+      i18n.global.setLocaleMessage(newLocale, mod.default);
+      locale.value = newLocale;
+      localStorage.setItem('locale', newLocale);
     };
 
     const getHintIcon = (error) => {
@@ -169,14 +197,15 @@ export default {
     };
 
     const getHintText = (error) => {
-      const hints = {
-        "Пароль повинен містити щонайменше 8 символів": "Мінімум 8 символів",
-        "Пароль повинен містити щонайменше 1 літеру": "1 літера",
-        "Пароль повинен містити щонайменше 1 цифру": "1 цифра",
-        "Пароль повинен містити щонайменше 1 спеціальний символ": "1 спецсимвол"
+      const hintMap = {
+        "Пароль повинен містити щонайменше 8 символів": t('passwordMinLength'),
+        "Пароль повинен містити щонайменше 1 літеру": t('passwordLetter'),
+        "Пароль повинен містити щонайменше 1 цифру": t('passwordDigit'),
+        "Пароль повинен містити щонайменше 1 спеціальний символ": t('passwordSpecialChar')
       };
-      return hints[error] || error;
+      return hintMap[error] || error;
     };
+
 
     const validatePassword = () => {
       const errors = [];
@@ -218,7 +247,6 @@ export default {
         return true;
       }
     };
-
     const registerUser = async () => {
       const isPasswordValid = validatePassword();
       const isPasswordMatchValid = validatePasswordMatch();
@@ -252,6 +280,10 @@ export default {
     const showErrorNotification = (message) => {
       alert(message);
     };
+    watch(() => password.value, () => {
+      validatePassword();
+      validatePasswordMatch();
+    });
 
     return {
       firstname,
@@ -267,7 +299,9 @@ export default {
       togglePasswordVisibility,
       getHintIcon,
       getHintText,
-      registerUser
+      registerUser,
+      currentLocale,
+      setLocale
     };
   }
 };
