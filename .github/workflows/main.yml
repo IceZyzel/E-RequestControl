@@ -165,7 +165,7 @@ jobs:
             --set promtail.enabled=true \
             --set grafana.enabled=false \
             --set loki.persistence.enabled=true \
-            --set loki.persistence.size=10Gi
+            --set loki.persistence.size=5Gi
 
 
 
