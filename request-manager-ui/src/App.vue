@@ -29,4 +29,22 @@ html, body, #app {
   opacity: 0;
   transform: translateY(10px);
 }
+.Vue-Toastification__toast {
+  font-family: inherit;
+  border-radius: 8px !important;
+  padding: 15px 20px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.Vue-Toastification__toast--success {
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%) !important;
+}
+
+.Vue-Toastification__toast--error {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+}
+
+.Vue-Toastification__icon {
+  font-size: 1.4rem !important;
+}
 </style>

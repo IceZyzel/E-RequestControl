@@ -25,7 +25,6 @@ export const useAuthStore = defineStore('auth', {
                 return true;
             } catch (error) {
                 console.error("Помилка авторизації:", error);
-                alert('Невірний логін або пароль!');
                 return false;
             }
         },

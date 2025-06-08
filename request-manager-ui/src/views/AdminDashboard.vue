@@ -474,6 +474,7 @@ import { useAuthStore } from '../store/auth';
 import { useRouter } from 'vue-router';
 import i18n from '../i18n';
 import { useI18n } from 'vue-i18n';
+import { useToast } from "vue-toastification";
 export default {
   name: "AdminDashboard",
   setup() {
@@ -496,7 +497,7 @@ export default {
     const itemsPerPage = ref(10);
     const currentNotificationsPage = ref(1);
     const currentUsersPage = ref(1);
-
+    const toast = useToast();
     const passwordErrors = reactive({
       create: [],
       edit: []
@@ -519,6 +520,15 @@ export default {
       }
     };
 
+    const handleApiError = (error, defaultMessage) => {
+      const serverMessage = error.response?.data?.message ||
+          error.response?.data?.error ||
+          error.message;
+      const message = `${t(defaultMessage)}: ${serverMessage}`;
+      toast.error(message);
+      console.error(message, error);
+      return message;
+    };
 
 
     const currentLocale = computed(() => locale.value);
@@ -658,6 +668,7 @@ export default {
         filteredTickets.value = [...tickets.value];
         currentPage.value = 1;
       } catch (error) {
+        toast.error(t('ticketFetchError'));
         console.error("Помилка при завантаженні тікетів:", error);
         tickets.value = [];
         filteredTickets.value = [];
@@ -757,6 +768,7 @@ export default {
         );
       } catch (error) {
         console.error("Помилка при завантаженні сповіщень:", error);
+        handleApiError(error, 'notificationFetchError');
       }
     };
 
@@ -768,6 +780,7 @@ export default {
         );
       } catch (error) {
         console.error("Помилка при завантаженні користувачів:", error);
+        handleApiError(error, 'userFetchError');
       }
     };
 
@@ -792,22 +805,54 @@ export default {
         else await fetchNotifications();
       } catch (error) {
         console.error("Помилка при видаленні:", error);
+        handleApiError(error, 'delete Error');
       }
     };
 
     const deleteTicket = async (ticketID) => {
-      await adminApi.adminDeleteTicket(ticketID);
-      tickets.value = tickets.value.filter(ticket => ticket.TicketID !== ticketID);
+      try {
+        await adminApi.adminDeleteTicket(ticketID);
+        tickets.value = tickets.value.filter(ticket => ticket.TicketID !== ticketID);
+        toast.success(t('ticketDeleteSuccess'));
+      } catch (error) {
+        toast.error(t('ticketDeleteError'));
+        console.error("Помилка при видаленні тікета:", error);
+        handleApiError(error, 'delete Error');
+      }
     };
 
     const deleteUser = async (userID) => {
+      try {
       await adminApi.deleteUser(userID);
       users.value = users.value.filter(user => user.UserID !== userID);
+        toast.success(t('userDeleteSuccess'), {
+          icon: "fas fa-check-circle",
+          timeout: 3000,
+        });
+      }
+      catch (error){
+        toast.error(t('userDeleteError'), {
+          icon: "fas fa-check-circle",
+          timeout: 3000,
+        });
+      }
     };
 
     const deleteNotification = async (notificationID) => {
-      await adminApi.deleteNotification(notificationID);
-      notifications.value = notifications.value.filter(notification => notification.NotificationID !== notificationID);
+      try {
+        await adminApi.deleteNotification(notificationID);
+        notifications.value = notifications.value.filter(notification => notification.NotificationID !== notificationID);
+        toast.success(t('notificationMarkedRead'), {
+          icon: "fas fa-check-circle",
+          timeout: 3000,
+        });
+      }
+      catch (error){
+        toast.error(t('notificationMarkError'), {
+          icon: "fas fa-check-circle",
+          timeout: 3000,
+        });
+      }
     };
 
     const editUser = (user) => {
@@ -822,7 +867,7 @@ export default {
       if (editUserData.value.Password) {
         validatePassword(editUserData.value.Password, 'edit');
         if (passwordErrors.edit.length > 0) {
-          alert("Помилка пароля:\n" + passwordErrors.edit.join("\n"));
+          toast.error(t('passwordChangeError:\n') + passwordErrors.edit.join("\n"));
           return;
         }
       }
@@ -838,9 +883,11 @@ export default {
 
         await adminApi.updateUser(editUserData.value.UserID, userDataToSend);
         editUserData.value = null;
+        toast.success(t('userUpdateSuccess'));
         await fetchUsers();
       } catch (error) {
         console.error("Помилка при оновленні користувача:", error);
+        handleApiError(error, 'userUpdateError');
       }
     };
 
@@ -858,7 +905,7 @@ export default {
     const submitCreateUser = async () => {
       validatePassword(newUser.value.Password, 'create');
       if (passwordErrors.create.length > 0) {
-        alert("Помилка пароля:\n" + passwordErrors.create.join("\n"));
+        toast.error(passwordErrors.create.join("\n"));
         return;
       }
 
@@ -885,16 +932,11 @@ export default {
         hasSpecialChar.value = false;
         passwordErrors.value = [];
 
+        toast.success(t('userCreateSuccess'));
         await fetchUsers();
       } catch (error) {
         console.error('Помилка при створенні користувача:', error);
-
-        const serverMessage = error.response?.data?.message
-            || error.response?.data?.error
-            || error.message
-            || "Невідома помилка сервера";
-
-        alert(`Помилка: ${serverMessage}`);
+        handleApiError(error,'userCreateError');
       }
     };
     const backupData = async () => {
@@ -925,10 +967,9 @@ export default {
           document.body.removeChild(link);
           URL.revokeObjectURL(downloadUrl);
         }, 100);
-
+        toast.success(t('backupSuccess'));
       } catch (error) {
-        console.error('Backup error:', error);
-        alert(`Backup failed: ${error.response?.data?.message || error.message}`);
+        toast.error(t('backupError') + ": " + error.message);
       }
     };
 
@@ -941,22 +982,18 @@ export default {
       fileInput.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
+        if (!file.name.endsWith('.sql')) {
+          toast.error(t('invalidFileFormat'));
+          return;
+        }
         try {
           const formData = new FormData();
           formData.append('file', file);
-
           await adminApi.restoreData(formData);
-          alert('Дані успішно відновлені!');
-
-          await Promise.all([
-            fetchUsers(),
-            fetchTickets(),
-            fetchNotifications()
-          ]);
+          toast.success(t('restoreSuccess'));
+          await Promise.all([fetchUsers(), fetchTickets(), fetchNotifications()]);
         } catch (error) {
-          console.error('Помилка при відновленні даних:', error);
-          alert(`Помилка при відновленні даних: ${error.response?.data?.error || error.message}`);
+          handleApiError(error, 'restoreError');
         }
       };
 
@@ -971,10 +1008,10 @@ export default {
         link.href = URL.createObjectURL(blob);
         link.download = `export_${new Date().toISOString().slice(0, 10)}.xlsx`;
         link.click();
-        alert('Дані успішно експортовані!');
+        toast.success(t('exportSuccess'));
       } catch (error) {
         console.error('Помилка при експорті даних:', error);
-        alert('Помилка при експорті даних!');
+        toast.error(t('exportError'));
       }
     };
 
@@ -988,11 +1025,11 @@ export default {
         if (file) {
           try {
             await adminApi.importData(file);
-            alert('Дані успішно імпортовані!');
+            toast.success(t('importSuccess'));
             await Promise.all([fetchUsers(), fetchTickets(), fetchNotifications()]);
           } catch (error) {
             console.error('Помилка при імпорті даних:', error);
-            alert('Помилка при імпорті даних!');
+            toast.error(t('importError'));
           }
         }
       };

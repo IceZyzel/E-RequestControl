@@ -149,6 +149,7 @@ import { authApi } from '../api';
 import { useRouter } from 'vue-router';
 import i18n from '../i18n';
 import { useI18n } from 'vue-i18n';
+import { useToast } from "vue-toastification";
 
 export default {
   name: 'RegisterUser',
@@ -164,7 +165,9 @@ export default {
     const passwordErrors = ref([]);
     const passwordMatchError = ref('');
     const isLoading = ref(false);
+    const toast = useToast();
     const { t, locale } = useI18n({ useScope: 'global' });
+
 
 
     const togglePasswordVisibility = () => {
@@ -196,51 +199,32 @@ export default {
       return isError ? 'fa-times-circle error' : 'fa-check-circle success';
     };
 
-    const getHintText = (error) => {
-      const hintMap = {
-        "Пароль повинен містити щонайменше 8 символів": t('passwordMinLength'),
-        "Пароль повинен містити щонайменше 1 літеру": t('passwordLetter'),
-        "Пароль повинен містити щонайменше 1 цифру": t('passwordDigit'),
-        "Пароль повинен містити щонайменше 1 спеціальний символ": t('passwordSpecialChar')
-      };
-      return hintMap[error] || error;
-    };
 
+    const passwordRules = [
+      { condition: () => password.value.length < 8, key: 'passwordMinLength' },
+      { condition: () => !/[a-zA-Z]/.test(password.value), key: 'passwordLetter' },
+      { condition: () => !/\d/.test(password.value), key: 'passwordDigit' },
+      { condition: () => !/[^a-zA-Z0-9\s]/.test(password.value), key: 'passwordSpecialChar' }
+    ];
 
     const validatePassword = () => {
       const errors = [];
-      const requirements = [
-        {
-          condition: password.value.length < 8,
-          message: "Пароль повинен містити щонайменше 8 символів"
-        },
-        {
-          condition: !/[a-zA-Z]/.test(password.value),
-          message: "Пароль повинен містити щонайменше 1 літеру"
-        },
-        {
-          condition: !/\d/.test(password.value),
-          message: "Пароль повинен містити щонайменше 1 цифру"
-        },
-        {
-          condition: !/[^a-zA-Z0-9\s]/.test(password.value),
-          message: "Пароль повинен містити щонайменше 1 спеціальний символ"
-        }
-      ];
 
-      requirements.forEach(req => {
-        if (req.condition && password.value) {
-          errors.push(req.message);
+      passwordRules.forEach(rule => {
+        if (rule.condition() && password.value) {
+          errors.push(rule.key);
         }
       });
 
       passwordErrors.value = errors;
       return errors.length === 0;
     };
+    const getHintText = (key) => t(key);
+
 
     const validatePasswordMatch = () => {
       if (password.value && confirmPassword.value && password.value !== confirmPassword.value) {
-        passwordMatchError.value = "Паролі не співпадають";
+        passwordMatchError.value = t('passwordMismatch');
         return false;
       } else {
         passwordMatchError.value = '';
@@ -248,15 +232,7 @@ export default {
       }
     };
     const registerUser = async () => {
-      const isPasswordValid = validatePassword();
-      const isPasswordMatchValid = validatePasswordMatch();
-
-      if (!isPasswordValid || !isPasswordMatchValid) {
-        return;
-      }
-
       isLoading.value = true;
-
       try {
         const response = await authApi.register(
             firstname.value,
@@ -266,25 +242,32 @@ export default {
             password.value
         );
 
+        toast.success(t('registerSuccess'), {
+          timeout: 2000,
+          icon: "fas fa-check-circle",
+        });
+
         setTimeout(() => {
           router.push('/login');
         }, 2000);
 
       } catch (error) {
-        showErrorNotification('Помилка реєстрації. Спробуйте ще раз.' + (error.response?.data?.message || error.message));
+        const errorMessage = error.response?.data?.message || error.message;
+        toast.error(t('registerError') + ': ' + errorMessage, {
+          icon: "fas fa-exclamation-triangle",
+          timeout: 5000,
+        });
       } finally {
         isLoading.value = false;
       }
     };
 
-    const showErrorNotification = (message) => {
-      alert(message);
-    };
     watch(() => password.value, () => {
       validatePassword();
+    });
+    watch(() => password.value, () => {
       validatePasswordMatch();
     });
-
     return {
       firstname,
       lastname,

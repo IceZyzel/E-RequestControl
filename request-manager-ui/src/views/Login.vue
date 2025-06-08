@@ -67,28 +67,35 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '../store/auth';
 import i18n from '../i18n';
 import { useI18n } from 'vue-i18n';
+import { useToast } from "vue-toastification";
 
 
 const { t, locale } = useI18n({ useScope: 'global' });
 
 const currentLocale = computed(() => locale.value);
 
+const toast = useToast();
 const setLocale = async (newLocale) => {
   if (locale.value === newLocale) return;
 
-  const messages = import.meta.glob('../i18n/locales/*.json');
-  const path = `../i18n/locales/${newLocale}.json`;
-  const loader = messages[path];
+  try {
+    const messages = import.meta.glob('../i18n/locales/*.json');
+    const path = `../i18n/locales/${newLocale}.json`;
+    const loader = messages[path];
 
-  if (!loader) {
-    console.error(`Locale ${newLocale} not found`);
-    return;
+    if (!loader) {
+      toast.error(`Locale "${newLocale}" not found`);
+      return;
+    }
+
+    const mod = await loader();
+    i18n.global.setLocaleMessage(newLocale, mod.default);
+    locale.value = newLocale;
+    localStorage.setItem('locale', newLocale);
+  } catch (error) {
+    toast.error('Error loading locale file');
+    console.error(error);
   }
-
-  const mod = await loader();
-  i18n.global.setLocaleMessage(newLocale, mod.default);
-  locale.value = newLocale;
-  localStorage.setItem('locale', newLocale);
 };
 
 const username = ref('');
@@ -111,20 +118,40 @@ const handleSubmit = async () => {
       password: password.value,
     });
 
-    if (!success) return;
+    if (!success) {
+      toast.error(t('invalidCredentials'), {
+        icon: "fas fa-exclamation-triangle",
+        timeout: 5000,
+      });
+      return;
+    }
+
+    toast.success(t('loginSuccess'), {
+      timeout: 1500,
+      icon: "fas fa-check-circle"
+    });
 
     setTimeout(() => {
       router.push(authStore.role === 1 ? '/admin-dashboard' : '/dashboard');
     }, 1500);
   } catch (error) {
-    showErrorNotification('Помилка входу: ' + (error.response?.data?.message || error.message));
+    let errorMessage = t('loginError');
+
+    if (error.response?.status === 401) {
+      errorMessage = t('invalidCredentials');
+    } else if (error.response?.status === 400) {
+      errorMessage = t('badRequest');
+    } else if (error.response?.status === 500) {
+      errorMessage = t('serverError');
+    }
+
+    toast.error(errorMessage, {
+      icon: "fas fa-exclamation-triangle",
+      timeout: 5000,
+    });
   } finally {
     isLoading.value = false;
   }
-};
-
-const showErrorNotification = (message) => {
-  alert(message);
 };
 </script>
 

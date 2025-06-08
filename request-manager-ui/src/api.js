@@ -1,8 +1,7 @@
 import axios from "axios";
 
 const apiClient = axios.create({
-  //baseURL: "http://api.frontend.local",
-  baseURL: "http://www.zyzel.de/api",
+  baseURL: "http://localhost:8000/",
   allowedHosts: ["frontend.local","zyzel.de","http://zyzel.de/api","http://www.zyzel.de/api","https://zyzel.de/api","https://www.zyzel.de/api"],
   headers: {
     "Content-Type": "application/json",
@@ -32,8 +31,8 @@ apiClient.interceptors.response.use(
 
     if (
       error.response?.status === 401 &&
-      !originalRequest.url.includes("/auth/logout") &&
-      !originalRequest.url.includes("/auth/login")
+      !originalRequest.url.includes("api/auth/logout") &&
+      !originalRequest.url.includes("api/auth/login")
     ) {
       const authStore = useAuthStore();
       await authStore.logout();
@@ -45,10 +44,10 @@ apiClient.interceptors.response.use(
 
 export const authApi = {
   login: (username, password) =>
-    apiClient.post("/auth/login", { username, password }),
-  logout: () => apiClient.post("/auth/logout"),
+    apiClient.post("api/auth/login", { username, password }),
+  logout: () => apiClient.post("api/auth/logout"),
   register: (firstname, lastname, email, username, password) =>
-    apiClient.post("/auth/register", {
+    apiClient.post("api/auth/register", {
       firstname,
       lastname,
       email,
@@ -56,7 +55,7 @@ export const authApi = {
       password,
     }),
   registerAdmin: (firstname, lastname, email, username, password) =>
-    apiClient.post("/auth/registerAdmin", {
+    apiClient.post("api/auth/registerAdmin", {
       firstname,
       lastname,
       email,
@@ -66,11 +65,11 @@ export const authApi = {
 };
 
 export const requestApi = {
-  getUserTickets: () => apiClient.get("/tickets/"),
-  getAllUsers: () => apiClient.get("/users"),
+  getUserTickets: () => apiClient.get("api/tickets/"),
+  getAllUsers: () => apiClient.get("api/users"),
   createTicket: async (ticketData) => {
     try {
-      const response = await apiClient.post("/tickets/", ticketData);
+      const response = await apiClient.post("api/tickets/", ticketData);
       return response.data;
     } catch (error) {
       console.error("Помилка при створенні тікета:", error);
@@ -78,10 +77,10 @@ export const requestApi = {
     }
   },
   updateTicket: (ticketID, ticketData) =>
-    apiClient.put(`/tickets/${ticketID}`, ticketData),
+    apiClient.put(`api/tickets/${ticketID}`, ticketData),
   deleteTicket: async (ticketID) => {
     try {
-      await apiClient.delete(`/tickets/${ticketID}`);
+      await apiClient.delete(`api/tickets/${ticketID}`);
       return ticketID;
     } catch (error) {
       console.error("Помилка при видаленні тікета:", error);
@@ -91,11 +90,11 @@ export const requestApi = {
 };
 
 export const notificationApi = {
-  getUserNotifications: () => apiClient.get("/notifications/"),
+  getUserNotifications: () => apiClient.get("api/notifications/"),
   createNotification: async (notificationData) => {
     try {
       const response = await apiClient.post(
-        "/api/notifications/",
+        "api/notifications/",
         notificationData
       );
       return response.data;
@@ -106,7 +105,7 @@ export const notificationApi = {
   },
   markAsRead: async (notificationID) => {
     try {
-      await apiClient.delete(`/notifications/${notificationID}`);
+      await apiClient.delete(`api/notifications/${notificationID}`);
       return notificationID;
     } catch (error) {
       console.error("Помилка при видаленні сповіщення:", error);
@@ -129,58 +128,58 @@ export const adminApi = {
       params.append("status", filters.status.trim());
     }
 
-    console.log("Request URL:", `/admin/tickets/?${params.toString()}`);
+    console.log("Request URL:", `api/admin/tickets/?${params.toString()}`);
     if (
       filters.sender != "" ||
       filters.assignee != "" ||
       filters.status != ""
     ) {
-      return apiClient.get(`/admin/tickets/?${params.toString()}`);
+      return apiClient.get(`api/admin/tickets/?${params.toString()}`);
     }
   },
-  getAllTickets: () => apiClient.get("/admin/tickets/"),
+  getAllTickets: () => apiClient.get("api/admin/tickets/"),
 
-  getTicketByID: (ticketID) => apiClient.get(`/admin/tickets/${ticketID}`),
+  getTicketByID: (ticketID) => apiClient.get(`api/admin/tickets/${ticketID}`),
   adminDeleteTicket: (ticketID) =>
-    apiClient.delete(`/admin/tickets/${ticketID}`),
+    apiClient.delete(`api/admin/tickets/${ticketID}`),
 
-  getAllNotifications: () => apiClient.get("/admin/notifications/"),
+  getAllNotifications: () => apiClient.get("api/admin/notifications/"),
   createNotification: (notificationData) =>
-    apiClient.post("/admin/notifications/", notificationData),
+    apiClient.post("api/admin/notifications/", notificationData),
   deleteNotification: (notificationID) =>
-    apiClient.delete(`/admin/notifications/${notificationID}`),
+    apiClient.delete(`api/admin/notifications/${notificationID}`),
 
-  getAllUsers: () => apiClient.get("/admin/users/"),
+  getAllUsers: () => apiClient.get("api/admin/users/"),
 
   createUser: async (userData) => {
     try {
-      const response = await apiClient.post("/admin/users/", userData);
+      const response = await apiClient.post("api/admin/users/", userData);
       return response.data;
     } catch (error) {
       console.error("Помилка при створенні користувача:", error);
       throw error;
     }
   },
-  getUserByID: (userID) => apiClient.get(`/admin/users/${userID}`),
+  getUserByID: (userID) => apiClient.get(`api/admin/users/${userID}`),
   updateUser: (userID, userData) =>
-    apiClient.put(`/admin/users/${userID}`, userData),
-  deleteUser: (userID) => apiClient.delete(`/admin/users/${userID}`),
+    apiClient.put(`api/admin/users/${userID}`, userData),
+  deleteUser: (userID) => apiClient.delete(`api/admin/users/${userID}`),
 
   backupData: () =>
-    apiClient.post("/admin/data/backup", null, {
+    apiClient.post("api/admin/data/backup", null, {
       responseType: "blob",
       headers: {
         Accept: "application/octet-stream",
       },
     }),
   restoreData: (formData) =>
-    apiClient.post("/admin/data/restore", formData, {
+    apiClient.post("api/admin/data/restore", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
     }),
   exportData: async () => {
-    const response = await apiClient.get("/admin/data/export", {
+    const response = await apiClient.get("api/admin/data/export", {
       responseType: "blob",
     });
     return response.data;
@@ -189,7 +188,7 @@ export const adminApi = {
   importData: async (importFile) => {
     const formData = new FormData();
     formData.append("file", importFile);
-    await apiClient.post("/admin/data/import", formData, {
+    await apiClient.post("api/admin/data/import", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },

@@ -284,6 +284,7 @@ import { format } from 'date-fns';
 import { useRouter } from "vue-router";
 import i18n from '../i18n';
 import { useI18n } from 'vue-i18n';
+import { useToast } from "vue-toastification";
 
 
 export default {
@@ -299,7 +300,7 @@ export default {
     const itemsPerPage = ref(10);
     const currentNotificationsPage = ref(1);
     const isLoading = ref(false);
-
+    const toast = useToast();
     const { t, locale } = useI18n({ useScope: 'global' });
     const currentLocale = computed(() => locale.value);
 
@@ -360,6 +361,10 @@ export default {
         users.value = response.data || [];
       } catch (error) {
         console.error("Помилка при завантаженні користувачів:", error);
+        toast.error(t('userFetchError'), {
+          icon: "fas fa-exclamation-triangle",
+          timeout: 5000,
+        });
       }
     };
 
@@ -372,6 +377,10 @@ export default {
         );
       } catch (error) {
         console.error("Помилка при завантаженні тікетів:", error);
+        toast.error(t('ticketFetchError'), {
+          icon: "fas fa-exclamation-triangle",
+          timeout: 5000,
+        });
         tickets.value = [];
       } finally {
         isLoading.value = false;
@@ -416,6 +425,10 @@ export default {
         );
       } catch (error) {
         console.error("Помилка при завантаженні сповіщень:", error);
+        toast.error(t('notificationFetchError'), {
+          icon: "fas fa-exclamation-triangle",
+          timeout: 5000,
+        });
         notifications.value = [];
       } finally {
         isLoading.value = false;
@@ -456,8 +469,17 @@ export default {
         confirmModal.value.show = false;
         await fetchTickets();
         await fetchNotifications();
+
+        toast.success(t('deleteSuccess'), {
+          icon: "fas fa-check-circle",
+          timeout: 3000,
+        });
       } catch (error) {
         console.error("Помилка при видаленні:", error);
+        toast.error(t('deleteError'), {
+          icon: "fas fa-exclamation-triangle",
+          timeout: 5000,
+        });
       }
     };
 
@@ -475,12 +497,24 @@ export default {
         tickets.value = tickets.value.filter(ticket => ticket.TicketID !== ticketID);
       } catch (error) {
         console.error("Помилка при видаленні тікета:", error);
+        toast.error(t('ticketDeleteError'), {
+          icon: "fas fa-exclamation-triangle",
+          timeout: 5000,
+        });
       }
     };
 
     const deleteNotification = async (notificationID) => {
-      await notificationApi.markAsRead(notificationID);
-      notifications.value = notifications.value.filter(notification => notification.NotificationID !== notificationID);
+      try {
+        await notificationApi.markAsRead(notificationID);
+        notifications.value = notifications.value.filter(notification => notification.NotificationID !== notificationID);
+      } catch (error) {
+        console.error("Помилка при видаленні сповіщення:", error);
+        toast.error(t('notificationDeleteError'), {
+          icon: "fas fa-exclamation-triangle",
+          timeout: 5000,
+        });
+      }
     };
 
     const addTicket = async () => {
@@ -488,7 +522,7 @@ export default {
       try {
         const assignedUser = users.value.find(u => u.UserID === newTicket.value.AssignedTo);
         if (assignedUser && assignedUser.RoleID === 1) {
-          throw new Error("Не можна призначати тікети адміністраторам");
+          throw new Error(t('assignAdminError'));
         }
 
         await requestApi.createTicket(newTicket.value);
@@ -496,9 +530,17 @@ export default {
         showCreateTicketModal.value = false;
         await fetchTickets();
         await fetchNotifications();
+
+        toast.success(t('ticketCreateSuccess'), {
+          icon: "fas fa-check-circle",
+          timeout: 3000,
+        });
       } catch (error) {
         console.error("Помилка при додаванні тікета:", error);
-        alert(error.message || "Сталася помилка при створенні тікета");
+        toast.error(error.message || t('ticketCreateError'), {
+          icon: "fas fa-exclamation-triangle",
+          timeout: 5000,
+        });
       } finally {
         isLoading.value = false;
       }
@@ -513,7 +555,7 @@ export default {
       try {
         const assignedUser = users.value.find(u => u.UserID === editTicketData.value.AssignedTo);
         if (assignedUser && assignedUser.RoleID === 1) {
-          throw new Error("Не можна призначати тікети адміністраторам");
+          throw new Error(t('assignAdminError'));
         }
 
         await requestApi.updateTicket(editTicketData.value.TicketID, editTicketData.value);
@@ -522,9 +564,17 @@ export default {
           fetchTickets(),
           fetchNotifications()
         ]);
+
+        toast.success(t('ticketUpdateSuccess'), {
+          icon: "fas fa-check-circle",
+          timeout: 3000,
+        });
       } catch (error) {
         console.error("Помилка при оновленні тікета:", error);
-        alert(error.message || "Сталася помилка при оновленні тікета");
+        toast.error(error.message || t('ticketUpdateError'), {
+          icon: "fas fa-exclamation-triangle",
+          timeout: 5000,
+        });
       } finally {
         isLoading.value = false;
       }
@@ -534,8 +584,17 @@ export default {
       try {
         await notificationApi.markAsRead(notificationID);
         await fetchNotifications();
+
+        toast.success(t('notificationMarkedRead'), {
+          icon: "fas fa-check-circle",
+          timeout: 3000,
+        });
       } catch (error) {
         console.error("Помилка при видаленні сповіщення:", error);
+        toast.error(t('notificationMarkError'), {
+          icon: "fas fa-exclamation-triangle",
+          timeout: 5000,
+        });
       }
     };
 
