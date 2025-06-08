@@ -50,25 +50,6 @@ spec:
                 port:
                   number: 80
 
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: loki-ingress
-  namespace: monitoring
-  annotations:
-spec:
-  ingressClassName: nginx
-  rules:
-    - host: loki.zyzel.de
-      http:
-        paths:
-          - path: /loki
-            pathType: Prefix
-            backend:
-              service:
-                name: loki
-                port:
-                  number: 3100
+
 
 
