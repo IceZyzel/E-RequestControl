@@ -44,3 +44,34 @@ ingress:
   frontendHost: "www.zyzel.de"
   certificateArn: "arn:aws:acm:us-east-1:529088291614:certificate/99698458-3848-4cd0-a30d-5fbf7c961ddd"
   grafanaHost: grafana.zyzel.de
+
+loki:
+  image:
+    tag: "2.8.0"
+
+  persistence:
+    enabled: true
+    size: 5Gi
+
+promtail:
+  enabled: true
+  image:
+    tag: "2.8.0"
+  config:
+    snippets:
+      pipelineStages:
+        - docker: {}
+
+grafana:
+  enabled: true
+  image:
+    tag: "10.2.3"
+  sidecar:
+    datasources:
+      enabled: true
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://prometheus-operated.monitoring.svc.cluster.local:9090
+
