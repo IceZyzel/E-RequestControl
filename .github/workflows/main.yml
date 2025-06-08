@@ -165,7 +165,7 @@ jobs:
             --set grafana.image.tag=10.2.3
 
           helm upgrade --install loki grafana/loki-stack --namespace monitoring \
-            --values values-cloud.yaml
+            --values req-helm/values_cloud.yaml
 
 
 
