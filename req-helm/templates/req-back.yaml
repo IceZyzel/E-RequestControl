@@ -32,8 +32,8 @@ spec:
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: db-secrets  # Имя секрета
-                  key: root-password  # Ключ в секрете
+                  name: db-secrets  
+                  key: root-password  
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:

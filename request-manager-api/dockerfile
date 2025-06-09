@@ -1,4 +1,6 @@
 FROM golang:1.24-alpine AS builder
+LABEL "Project"="request-manager"
+LABEL "Author"="Illia Kuchuk"
 
 WORKDIR /usr/src/app
 COPY go.mod go.sum ./
@@ -9,7 +11,6 @@ RUN go build -o /main ./cmd/main.go
 FROM alpine:latest
 WORKDIR /root/
 
-# Устанавливаем mariadb-client вместо mysql-client
 RUN apk add --no-cache \
     ca-certificates \
     tzdata \

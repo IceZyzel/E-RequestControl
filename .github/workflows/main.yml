@@ -16,17 +16,15 @@ jobs:
       - name: Code checkout
         uses: actions/checkout@v4
 
-      # Установка Go
       - name: Setup Go
         uses: actions/setup-go@v5
         with: 
-          go-version: '1.22' # или твоя нужная версия
+          go-version: '1.22' 
 
-      # Установка Node.js (для Vue.js)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # или твоя нужная версия
+          node-version: '20' 
 
       - name: Install Node dependencies
         working-directory: request-manager-ui
@@ -38,7 +36,6 @@ jobs:
          distribution: 'temurin' # See 'Supported distributions' for available options
          java-version: '11'
 
-      # Установка sonar-scanner
       - name: Setup SonarQube
         uses: warchant/setup-sonar-scanner@v7
 
@@ -48,7 +45,7 @@ jobs:
           echo "SONAR_PROJECT_KEY:${{ secrets.SONAR_PROJECT_KEY }}"
           echo "SONAR_URL:${{ secrets.SONAR_URL }}"
 
-      # Запуск анализа
+      # Start scanning
       - name: SonarQube Scan
         run: |
           sonar-scanner \
@@ -186,10 +183,6 @@ jobs:
           helm upgrade --install loki grafana/loki-stack --namespace monitoring \
             --values req-helm/values_cloud.yaml
 
-
-
-
-
       - name: Login to ECR
         run: |
           kubectl delete secret regcred --ignore-not-found
@@ -209,3 +202,13 @@ jobs:
           namespace: default
           config-files: req-helm/values_cloud.yaml
           name: req-helm    
+
+      - name: Configure MySQL root access
+        run: |
+          kubectl wait --for=condition=ready pod -l app=req-db --timeout=300s
+          
+          DB_POD=$(kubectl get pods -l app=req-db -o jsonpath='{.items[0].metadata.name}')
+          
+          kubectl exec $DB_POD -- \
+            mysql -uroot -p"${{ secrets.DB_ROOT_PASSWORD }}" \
+            -e "ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '${{ secrets.DB_ROOT_PASSWORD }}'; FLUSH PRIVILEGES;"
