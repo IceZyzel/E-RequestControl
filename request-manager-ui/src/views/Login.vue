@@ -114,8 +114,8 @@ const handleSubmit = async () => {
 
   try {
     const success = await authStore.login({
-      username: username.value,
-      password: password.value,
+      username: (username.value).trim(),
+      password: (password.value).trim(),
     });
 
     if (!success) {
