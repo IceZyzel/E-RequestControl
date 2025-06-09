@@ -203,12 +203,3 @@ jobs:
           config-files: req-helm/values_cloud.yaml
           name: req-helm    
 
-      - name: Configure MySQL root access
-        run: |
-          kubectl wait --for=condition=ready pod -l app=req-db --timeout=300s
-          
-          DB_POD=$(kubectl get pods -l app=req-db -o jsonpath='{.items[0].metadata.name}')
-          
-          kubectl exec $DB_POD -- \
-            mysql -uroot -p"${{ secrets.DB_ROOT_PASSWORD }}" \
-            -e "ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '${{ secrets.DB_ROOT_PASSWORD }}'; FLUSH PRIVILEGES;"

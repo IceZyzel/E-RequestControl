@@ -4,3 +4,4 @@ LABEL "Author"="Illia Kuchuk"
 
 
 COPY db_backup.sql /docker-entrypoint-initdb.d/
+COPY init.sh /docker-entrypoint-initdb.d/init.sh
