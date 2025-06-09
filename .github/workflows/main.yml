@@ -153,6 +153,13 @@ jobs:
       - name: Print config file
         run: cat ~/.kube/config
 
+      - name: Create Kubernetes Secret
+        run: |
+          kubectl create secret generic db-secrets \
+            --from-literal=db-root-password="${{ secrets.DB_ROOT_PASSWORD }}" \
+            --from-literal=db-name="${{ secrets.DB_NAME }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Install Cert-Manager
         run: |
           kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
@@ -198,7 +205,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
           cluster-name: ${{ env.EKS_CLUSTER }}
-          #config-files: .github/values/dev.yaml
           chart-path: ./req-helm
           namespace: default
           config-files: req-helm/values_cloud.yaml

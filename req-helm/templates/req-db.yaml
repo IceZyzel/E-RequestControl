@@ -19,9 +19,15 @@ spec:
             - containerPort: {{.Values.services.db.port}}
           env:
             - name: MYSQL_ROOT_PASSWORD
-              value: {{.Values.db.rootPassword | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: root-password
             - name: MYSQL_DATABASE
-              value: {{.Values.db.database | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: db-name
           volumeMounts:
             - name: req-db-storage
               mountPath: /var/lib/mysql

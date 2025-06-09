@@ -24,11 +24,11 @@ func main() {
 		logrus.Fatalf("Error loading env variables: %s", err.Error())
 	}
 	db, err := repository.NewMysqlDb(repository.Config{
-		Host:     ("req-db"),
-		Port:     ("3306"),
-		Username: ("root"),
-		Password: ("123123"),
-		Dbname:   ("request_manager"),
+		Host:     os.Getenv("DB_HOST"),     // "req-db"
+		Port:     os.Getenv("DB_PORT"),     // "3306"
+		Username: os.Getenv("DB_USER"),     // "root"
+		Password: os.Getenv("DB_PASSWORD"), // from Secrets
+		Dbname:   os.Getenv("DB_NAME"),     // from Secrets
 	})
 	if err != nil {
 		logrus.Fatalf("Failed to initialize db %s", err.Error())

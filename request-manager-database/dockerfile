@@ -2,7 +2,5 @@ FROM mysql:8.0.41-oraclelinux9
 LABEL "Project"="request-manager"
 LABEL "Author"="Illia Kuchuk"
 
-ENV MYSQL_ROOT_PASSWORD="123123"
-ENV MYSQL_DATABASE="request_manager"
 
 COPY db_backup.sql /docker-entrypoint-initdb.d/
