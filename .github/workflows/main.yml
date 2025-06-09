@@ -156,7 +156,7 @@ jobs:
       - name: Create Kubernetes Secret
         run: |
           kubectl create secret generic db-secrets \
-            --from-literal=db-root-password="${{ secrets.DB_ROOT_PASSWORD }}" \
+            --from-literal=root-password="${{ secrets.DB_ROOT_PASSWORD }}" \
             --from-literal=db-name="${{ secrets.DB_NAME }}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
