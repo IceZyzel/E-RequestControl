@@ -4,8 +4,16 @@ metadata:
   name: {{ .Values.ingress.name }}
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
   ingressClassName: {{ .Values.ingress.className }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.backendHost }}
+        - {{ .Values.ingress.frontendHost }}
+      secretName: req-app-tls
   rules:
     - host: {{ .Values.ingress.backendHost }}
       http:
@@ -36,8 +44,15 @@ metadata:
   namespace: monitoring
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
   ingressClassName: {{ .Values.ingress.className }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.grafanaHost }}
+      secretName: grafana-tls
   rules:
     - host: {{ .Values.ingress.grafanaHost }}
       http:
@@ -46,11 +61,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: loki-grafana      # заменить на сервис от локи-стека
+                name: loki-grafana
                 port:
                   number: 80
-
-
-
-
-

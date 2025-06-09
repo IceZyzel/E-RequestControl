@@ -153,6 +153,18 @@ jobs:
       - name: Print config file
         run: cat ~/.kube/config
 
+      - name: Install Cert-Manager
+        run: |
+          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
+          echo "Waiting for cert-manager pods to be ready..."
+          kubectl rollout status deployment/cert-manager -n cert-manager --timeout=120s || true
+          kubectl rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s || true
+          kubectl rollout status deployment/cert-manager-cainjector -n cert-manager --timeout=120s || true
+
+      - name: Apply ClusterIssuer
+        run: |
+          kubectl apply -f req-helm/cluster-issuer.yaml
+
       - name: Deploy Prometheus and Loki stack
         run: |
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
