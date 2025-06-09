@@ -27,12 +27,8 @@ func CORSMiddleware() gin.HandlerFunc {
 			"http://localhost:5173/api",
 			"http://req-front-service",
 			"http://req-front-service.default.svc.cluster.local",
-			"http://zyzel.de",
-			"http://zyzel.de/api",
 			"https://zyzel.de",
 			"https://zyzel.de/api",
-			"http://www.zyzel.de/api",
-			"http://www.zyzel.de",
 			"https://www.zyzel.de/api",
 			"https://www.zyzel.de",
 		}

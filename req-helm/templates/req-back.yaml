@@ -30,9 +30,15 @@ spec:
             - name: DB_USER
               value: "root"
             - name: DB_PASSWORD
-              value: {{.Values.db.rootPassword | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets  
+                  key: root-password  
             - name: DB_NAME
-              value: {{.Values.db.database | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: db-name
 
 ---
 apiVersion: v1

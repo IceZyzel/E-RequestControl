@@ -1,18 +1,16 @@
 # Используем официальный образ Node.js
 FROM node:20-alpine
-
+LABEL "Project"="request-manager"
+LABEL "Author"="Illia Kuchuk"
 WORKDIR /app
 
-# Копируем package.json и устанавливаем зависимости
 COPY package.json package-lock.json ./
 RUN npm install
 RUN npm install vue-i18n@9
 RUN npm install vue-toastification@next
-# Копируем все файлы проекта
+
 COPY . .
 
-# Открываем порт Vite
 EXPOSE 5173
 
-# Запуск в режиме разработки
 CMD ["npm", "run", "dev", "--", "--host", "--open=false"]
