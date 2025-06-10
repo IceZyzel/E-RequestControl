@@ -210,7 +210,7 @@ func (r *AdminMysql) BackupData(backupPath string) error {
 	defer outputFile.Close()
 
 	cmd := exec.Command(
-		"mariadb-dump",
+		"mysqldump",
 		"--host=req-db",
 		"--port=3306",
 		"--user=root",
@@ -258,7 +258,7 @@ func (r *AdminMysql) RestoreData(backupFile multipart.File) error {
 	defer dumpFile.Close()
 
 	cmd := exec.Command(
-		"mariadb",
+		"mysql",
 		"-h", "req-db",
 		"-P", "3306",
 		"-u", "root",

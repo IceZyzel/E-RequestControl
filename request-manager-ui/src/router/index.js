@@ -20,12 +20,12 @@ const routes = [
     {
         path: '/dashboard',
         component: Dashboard,
-        meta: { requiresUser: true }
+        meta: { requiresUser: true, requiresGuest: false }
     },
     {
         path: '/admin-dashboard',
         component: AdminDashboard,
-        meta: { requiresAdmin: true }
+        meta: { requiresAdmin: true, requiresGuest: false  }
     },
 ];
 
