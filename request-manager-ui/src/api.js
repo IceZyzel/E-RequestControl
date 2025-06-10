@@ -2,7 +2,7 @@ import axios from "axios";
 
 const apiClient = axios.create({
   baseURL: "https://www.zyzel.de/api",
-  allowedHosts: ["frontend.local","zyzel.de","https://zyzel.de/api","https://www.zyzel.de/api","http://zyzel.de/api","http://www.zyzel.de/api"],
+  allowedHosts: ["frontend.local","zyzel.de","https://zyzel.de/api","https://www.zyzel.de/api"],
   headers: {
     "Content-Type": "application/json",
   },
@@ -118,23 +118,21 @@ export const adminApi = {
   getFilteredTickets: (filters) => {
     const params = new URLSearchParams();
 
-    if (filters.sender && filters.sender.trim()) {
-      params.append("/sender", filters.sender.trim());
+    if (filters.sender?.trim()) {
+      params.append("sender", filters.sender.trim());
     }
-    if (filters.assignee && filters.assignee.trim()) {
-      params.append("/assignee", filters.assignee.trim());
+    if (filters.assignee?.trim()) {
+      params.append("assignee", filters.assignee.trim());
     }
-    if (filters.status && filters.status.trim()) {
-      params.append("/status", filters.status.trim());
+    if (filters.status?.trim()) {
+      params.append("status", filters.status.trim());
     }
 
-    console.log("Request URL:", `/admin/tickets/?${params.toString()}`);
-    if (
-      filters.sender != "" ||
-      filters.assignee != "" ||
-      filters.status != ""
-    ) {
-      return apiClient.get(`/admin/tickets/?${params.toString()}`);
+    const queryString = params.toString();
+    console.log("Request URL:", `api/admin/tickets/?${queryString}`);
+
+    if (queryString) {
+      return apiClient.get(`api/admin/tickets/?${queryString}`);
     }
   },
   getAllTickets: () => apiClient.get("/admin/tickets/"),
