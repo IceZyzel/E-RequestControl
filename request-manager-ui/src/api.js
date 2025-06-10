@@ -2,7 +2,7 @@ import axios from "axios";
 
 const apiClient = axios.create({
   baseURL: "https://www.zyzel.de/api",
-  allowedHosts: ["frontend.local","zyzel.de","https://zyzel.de/api","https://www.zyzel.de/api"],
+  allowedHosts: ["frontend.local","zyzel.de","https://zyzel.de/api","https://www.zyzel.de/api","http://zyzel.de/api","http://www.zyzel.de/api"],
   headers: {
     "Content-Type": "application/json",
   },
