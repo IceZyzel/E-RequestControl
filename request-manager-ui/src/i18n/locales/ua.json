@@ -152,5 +152,15 @@
   "invalidFileFormat": "Недійсний формат файлу",
   "deleteConfirm": "Ви впевнені, що хочете видалити {item}?",
   "yes": "Так",
-  "no": "Ні"
+  "no": "Ні",
+
+
+  "notificationMessages": {
+    "ticketUpdated": "Оновлено тікет",
+    "ticketCreated": "Створено новий тікет"
+  },
+  "statusMessages": {
+    "statusCreated": "Новий",
+    "statusUpdated": "Оновлено"
+  }
 }

@@ -47,7 +47,7 @@
               </td>
               <td>
                   <span :class="['status-badge', getStatusClass(ticket.Status)]">
-                    {{ $t(ticket.Status) }}
+                    {{ $t(messageMap[ticket.Status] || ticket.Status) }}
                   </span>
               </td>
               <td>{{ ticket.AssigneeUsername || $t('notAssigned') }}</td>
@@ -89,7 +89,7 @@
         <div class="notifications-list">
           <div v-for="notification in paginatedNotifications" :key="notification.NotificationID" class="notification-item">
             <div class="notification-content">
-              <p class="notification-message">{{ notification.Message }}</p>
+              <p class="notification-message">{{ $t(messageMap[notification.Message] || notification.Message) }}</p>
               <span class="notification-time">{{ formatDate(notification.CreatedAt) }}</span>
             </div>
             <button class="action-btn small delete" @click="confirmDelete('notification', notification.NotificationID, $t('notification'))">
@@ -281,7 +281,6 @@ import { ref, onMounted, computed } from "vue";
 import { requestApi, notificationApi } from "../api";
 import { useAuthStore } from "../store/auth";
 import { format } from 'date-fns';
-import { useRouter } from "vue-router";
 import i18n from '../i18n';
 import { useI18n } from 'vue-i18n';
 import { useToast } from "vue-toastification";
@@ -295,7 +294,6 @@ export default {
     const notifications = ref([]);
     const users = ref([]);
     const authStore = useAuthStore();
-    const router = useRouter();
     const expandedDescriptions = ref({});
     const itemsPerPage = ref(10);
     const currentNotificationsPage = ref(1);
@@ -303,6 +301,13 @@ export default {
     const toast = useToast();
     const { t, locale } = useI18n({ useScope: 'global' });
     const currentLocale = computed(() => locale.value);
+
+    const messageMap = {
+      'Оновлено тікет': 'notificationMessages.ticketUpdated',
+      'Створено новий тікет': 'notificationMessages.ticketCreated',
+      'Новий':'statusMessages.statusCreated',
+      'Оновлено':'statusMessages.statusUpdated'
+    };
 
     const setLocale = async (newLocale) => {
       if (locale.value === newLocale) return;
@@ -485,8 +490,8 @@ export default {
 
     const getStatusClass = (status) => {
       switch (status) {
-        case t('New'): return 'status-new';
-        case t('Updated'): return 'status-in-progress';
+        case 'Новий': return 'status-new';
+        case 'Оновлено': return 'status-in-progress';
         default: return '';
       }
     };
@@ -641,7 +646,9 @@ export default {
       itemsPerPage,
 
       filteredUsers,
-      setLocale
+      setLocale,
+      currentLocale,
+      messageMap
     };
   }
 };
@@ -790,10 +797,9 @@ export default {
 
 .status-badge {
   display: inline-block;
-  padding: 0.3rem 0.7rem;
-  border-radius: 4px;
-  font-weight: 500;
+  border-radius: 50px;
   font-size: 0.8rem;
+  font-weight: 500;
 }
 
 .status-new {
