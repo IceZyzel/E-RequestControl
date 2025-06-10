@@ -157,5 +157,15 @@
   "invalidFileFormat": "Invalid file format",
   "deleteConfirm": "Are you sure you want to delete {item}?",
   "yes": "Yes",
-  "no": "No"
+  "no": "No",
+
+
+  "notificationMessages": {
+    "ticketUpdated": "Ticket updated",
+    "ticketCreated": "New ticket created"
+  },
+  "statusMessages": {
+    "statusCreated": "New",
+    "statusUpdated": "Updated"
+  }
 }

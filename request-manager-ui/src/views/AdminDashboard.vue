@@ -113,7 +113,7 @@
             >
               <option value="">{{ $t('allStatuses') }}</option>
               <option v-for="status in statusOptions" :key="status" :value="status">
-                {{ $t(status) }}
+                {{ $t(messageMap[status] || status) }}
               </option>
             </select>
           </div>
@@ -155,7 +155,7 @@
               </td>
               <td>
                   <span :class="['status-badge', getStatusClass(ticket.Status)]">
-                    {{ $t(ticket.Status) }}
+                    {{ $t(messageMap[ticket.Status] || ticket.Status) }}
                   </span>
               </td>
               <td>{{ ticket.AssigneeUsername }}</td>
@@ -200,7 +200,7 @@
         <div class="notifications-list">
           <div v-for="notification in paginatedNotifications" :key="notification.NotificationID" class="notification-item">
             <div class="notification-content">
-              <p class="notification-message">{{ notification.Message }}</p>
+              <p class="notification-message">{{ $t(messageMap[notification.Message] || notification.Message) }}</p>
               <span class="notification-time">{{ formatDate(notification.CreatedAt) }}</span>
             </div>
             <button class="action-btn small delete" @click="confirmDelete('notification', notification.NotificationID, $t('notification'))">
@@ -471,7 +471,6 @@ import { reactive, ref, onMounted,watch, computed } from "vue";
 import { adminApi } from "../api";
 import { format } from 'date-fns';
 import { useAuthStore } from '../store/auth';
-import { useRouter } from 'vue-router';
 import i18n from '../i18n';
 import { useI18n } from 'vue-i18n';
 import { useToast } from "vue-toastification";
@@ -489,7 +488,6 @@ export default {
     });
     const showCreateUserModal = ref(false);
     const authStore = useAuthStore();
-    const router = useRouter();
     const { t, locale } = useI18n({ useScope: 'global' });
     const statusOptions = ref(['Новий', 'Оновлено']);
     const expandedDescriptions = ref({});
@@ -498,6 +496,12 @@ export default {
     const currentNotificationsPage = ref(1);
     const currentUsersPage = ref(1);
     const toast = useToast();
+    const messageMap = {
+      'Оновлено тікет': 'notificationMessages.ticketUpdated',
+      'Створено новий тікет': 'notificationMessages.ticketCreated',
+      'Новий':'statusMessages.statusCreated',
+      'Оновлено':'statusMessages.statusUpdated'
+    };
     const passwordErrors = reactive({
       create: [],
       edit: []
@@ -1099,7 +1103,9 @@ export default {
       hasNumber,
       hasSpecialChar,
 
-      setLocale
+      setLocale,
+      currentLocale,
+      messageMap
     };
   }
 };
@@ -1360,29 +1366,19 @@ h1 {
 
 .status-badge {
   display: inline-block;
-  padding: 0.35rem 0.65rem;
-  border-radius: 50px;
+  border-radius: 4px;
   font-weight: 500;
+  font-size: 0.8rem;
 }
 
-.status-badge.open {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
+.status-new {
+  background-color: #ebf8ff;
+  color: #3182ce;
 }
 
-.status-badge.in-progress {
-  background-color: rgba(249, 115, 22, 0.1);
-  color: #f97316;
-}
-
-.status-badge.resolved {
-  background-color: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-}
-
-.status-badge.closed {
-  background-color: rgba(107, 114, 128, 0.1);
-  color: #6b7280;
+.status-in-progress {
+  background-color: #fff5eb;
+  color: #dd6b20;
 }
 
 .actions {
