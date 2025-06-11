@@ -129,10 +129,10 @@ export const adminApi = {
     }
 
     const queryString = params.toString();
-    console.log("Request URL:", `api/admin/tickets/?${queryString}`);
+    console.log("Request URL:", `/admin/tickets/?${queryString}`);
 
     if (queryString) {
-      return apiClient.get(`api/admin/tickets/?${queryString}`);
+      return apiClient.get(`/admin/tickets/?${queryString}`);
     }
   },
   getAllTickets: () => apiClient.get("/admin/tickets/"),
