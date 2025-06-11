@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/jmoiron/sqlx"
 	Request_Manager "request_manager_api"
-	"time"
 )
 
 type TicketMysql struct {
@@ -43,7 +42,7 @@ func (r *TicketMysql) GetUserTickets(userID int) ([]Request_Manager.Ticket, erro
 }
 
 func (r *TicketMysql) CreateTicket(userID int, ticket Request_Manager.Ticket) (int, error) {
-	createdAt := time.Now().UTC().Add(2 * time.Hour).Format("2006-01-02 15:04:05")
+	createdAt := getCurrentTimeInUkraine()
 
 	if ticket.AssignedTo == 0 {
 		return 0, errors.New("AssignedTo не може бути пустим")
@@ -90,7 +89,7 @@ func (r *TicketMysql) CreateTicket(userID int, ticket Request_Manager.Ticket) (i
 	notification := Request_Manager.Notification{
 		Message:   notificationMessage,
 		UserID:    userID,
-		CreatedAt: time.Now().UTC().Add(2 * time.Hour).Format("2006-01-02 15:04:05"),
+		CreatedAt: getCurrentTimeInUkraine(),
 	}
 
 	_, err = r.notification.Create(notification)
@@ -102,7 +101,7 @@ func (r *TicketMysql) CreateTicket(userID int, ticket Request_Manager.Ticket) (i
 }
 
 func (r *TicketMysql) UpdateTicket(userID int, ticketID int, input Request_Manager.UpdateTicketInput) error {
-	updatedAt := time.Now().UTC().Add(2 * time.Hour).Format("2006-01-02 15:04:05")
+	updatedAt := getCurrentTimeInUkraine()
 
 	existingTicket, err := r.GetByID(ticketID)
 	if err != nil {
@@ -141,7 +140,7 @@ func (r *TicketMysql) UpdateTicket(userID int, ticketID int, input Request_Manag
 	notification := Request_Manager.Notification{
 		Message:   notificationMessage,
 		UserID:    userID,
-		CreatedAt: time.Now().UTC().Add(2 * time.Hour).Format("2006-01-02 15:04:05"),
+		CreatedAt: getCurrentTimeInUkraine(),
 	}
 
 	_, err = r.notification.Create(notification)

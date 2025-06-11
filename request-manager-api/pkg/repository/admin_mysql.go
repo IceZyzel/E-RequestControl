@@ -17,7 +17,6 @@ import (
 	"path/filepath"
 	Request_Manager "request_manager_api"
 	"strings"
-	"time"
 )
 
 type AdminMysql struct {
@@ -64,7 +63,7 @@ func (r *AdminMysql) CreateUser(user Request_Manager.User) (int, error) {
 		return 0, fmt.Errorf("user with this email or username already exists")
 	}
 
-	createdAt := time.Now().UTC().Add(2 * time.Hour).Format("2006-01-02 15:04:05")
+	createdAt := getCurrentTimeInUkraine()
 	updatedAt := createdAt
 
 	query := fmt.Sprintf(`INSERT INTO User (Username, Email, Password, RoleID, FirstName, LastName, CreatedAt, UpdatedAt)
@@ -94,7 +93,7 @@ func (r *AdminMysql) UpdateUser(UserID int, input Request_Manager.UpdateUserInpu
 		return err
 	}
 
-	updatedAt := time.Now().UTC().Add(2 * time.Hour).Format("2006-01-02 15:04:05")
+	updatedAt := getCurrentTimeInUkraine()
 
 	if input.Email != nil {
 		checkEmailQuery := "SELECT UserID FROM User WHERE Email=? AND UserID != ?"

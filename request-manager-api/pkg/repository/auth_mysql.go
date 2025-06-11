@@ -20,7 +20,7 @@ func getCurrentTimeInUkraine() string {
 	if err != nil {
 		log.Fatal("Error loading Ukraine timezone: ", err)
 	}
-	return time.Now().In(ukraineLocation).Add(2 * time.Hour).Format("2006-01-02 15:04:05")
+	return time.Now().In(ukraineLocation).Format("2006-01-02 15:04:05")
 }
 
 func (r *AuthMysql) CreateUser(user Request_Manager.User) (int, error) {
