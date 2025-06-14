@@ -16,6 +16,7 @@ FROM alpine:3.21
 WORKDIR /app
 RUN apk add --no-cache mysql-client
 COPY --from=builder /app/main .
-
+COPY --from=builder /app/.env .env
+COPY --from=builder /app/configs ./configs
 
 CMD ["./main"]
