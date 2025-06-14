@@ -11,34 +11,37 @@ import (
 	"syscall"
 
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 func main() {
-	db, err := repository.NewMysqlDb(repository.Config{
-		Host:     getEnv("DB_HOST"),
-		Port:     getEnv("DB_PORT"),
-		Username: getEnv("DB_USER"),
-		Password: getEnv("DB_PASSWORD"),
-		Dbname:   getEnv("DB_NAME"),
-	})
-	if err != nil {
-		logrus.Fatalf("Failed to initialize db: %s", err.Error())
+	if err := initConfig(); err != nil {
+		logrus.Fatalf("error initializing configs: %s", err.Error())
 	}
 
+
+	db, err := repository.NewMysqlDb(repository.Config{
+		Host:     os.Getenv("DB_HOST"),     // "req-db"
+		Port:     os.Getenv("DB_PORT"),     // "3306"
+		Username: os.Getenv("DB_USER"),     // "root"
+		Password: os.Getenv("DB_PASSWORD"), // from Secrets
+		Dbname:   os.Getenv("DB_NAME"),     // from Secrets
+	})
+	if err != nil {
+		logrus.Fatalf("Failed to initialize db %s", err.Error())
+	}
 	repos := repository.NewRepository(db)
 	services := services.NewService(repos)
 	handlers := handlers.NewHandler(services)
 
 	srv := new(request_manager_api.Server)
 
-	port := getEnv("PORT")
-
 	go func() {
-		if err := srv.Run(port, handlers.InitRoutes()); err != nil {
+		if err := srv.Run(viper.GetString("port"), handlers.InitRoutes()); err != nil {
 			logrus.Fatalf("error running server: %s", err.Error())
 		}
 	}()
-	logrus.Printf("E-RequestControl started on port %s", port)
+	logrus.Printf("E-RequestControl started")
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
@@ -55,10 +58,8 @@ func main() {
 	}
 }
 
-func getEnv(key string) string {
-	val, exists := os.LookupEnv(key)
-	if !exists {
-		logrus.Fatalf("environment variable %s not set", key)
-	}
-	return val
+func initConfig() error {
+	viper.AddConfigPath("configs")
+	viper.SetConfigName("config")
+	return viper.ReadInConfig()
 }
