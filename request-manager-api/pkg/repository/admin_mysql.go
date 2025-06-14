@@ -21,10 +21,14 @@ import (
 
 type AdminMysql struct {
 	db *sqlx.DB
+	config Config
 }
 
-func NewAdminMysql(db *sqlx.DB) *AdminMysql {
-	return &AdminMysql{db: db}
+func NewAdminMysql(db *sqlx.DB, cfg Config) *AdminMysql {
+	return &AdminMysql{
+	    db: db,
+	    config: cfg,
+	}
 }
 
 func (r *AdminMysql) GetUserByID(userID int) (Request_Manager.User, error) {
@@ -209,14 +213,14 @@ func (r *AdminMysql) BackupData(backupPath string) error {
 	defer outputFile.Close()
 
 	cmd := exec.Command(
-		"mysqldump",
-		"--host=req-db",
-		"--port=3306",
-		"--user=root",
-		"--password=123123",
-		"--skip-ssl",
-		"request_manager",
-	)
+    	"mysqldump",
+    	"--host="+r.config.Host,
+    	"--port="+r.config.Port,
+    	"--user="+r.config.Username,
+    	"--password="+r.config.Password,
+    	"--skip-ssl",
+    	r.config.Dbname,
+    )
 
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
@@ -257,14 +261,14 @@ func (r *AdminMysql) RestoreData(backupFile multipart.File) error {
 	defer dumpFile.Close()
 
 	cmd := exec.Command(
-		"mysql",
-		"-h", "req-db",
-		"-P", "3306",
-		"-u", "root",
-		"-p123123",
-		"--skip-ssl",
-		"request_manager",
-	)
+    	"mysql",
+    	"-h", r.config.Host,
+    	"-P", r.config.Port,
+    	"-u", r.config.Username,
+    	"-p"+r.config.Password,
+    	"--skip-ssl",
+    	r.config.Dbname,
+    )
 
 	cmd.Stdin = dumpFile
 	var stderr bytes.Buffer

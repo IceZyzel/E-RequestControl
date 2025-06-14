@@ -14,23 +14,18 @@ import (
 )
 
 func main() {
-	db, err := repository.NewMysqlDb(repository.Config{
-		Host:     getEnv("DB_HOST"),
-		Port:     getEnv("DB_PORT"),
-		Username: getEnv("DB_USER"),
-		Password: getEnv("DB_PASSWORD"),
-		Dbname:   getEnv("DB_NAME"),
-	})
+	cfg := loadConfig()
+
+	db, err := repository.NewMysqlDb(cfg)
 	if err != nil {
 		logrus.Fatalf("Failed to initialize db: %s", err.Error())
 	}
 
-	repos := repository.NewRepository(db)
+	repos := repository.NewRepository(db, cfg)
 	services := services.NewService(repos)
 	handlers := handlers.NewHandler(services)
 
 	srv := new(request_manager_api.Server)
-
 	port := "8000"
 
 	go func() {
@@ -52,6 +47,16 @@ func main() {
 
 	if err := db.Close(); err != nil {
 		logrus.Errorf("error occured on db connection close: %s", err.Error())
+	}
+}
+
+func loadConfig() repository.Config {
+	return repository.Config{
+		Host:     getEnv("DB_HOST"),
+		Port:     getEnv("DB_PORT"),
+		Username: getEnv("DB_USER"),
+		Password: getEnv("DB_PASSWORD"),
+		Dbname:   getEnv("DB_NAME"),
 	}
 }
 

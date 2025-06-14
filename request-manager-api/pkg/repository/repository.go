@@ -46,11 +46,11 @@ type Repository struct {
 	Admin
 }
 
-func NewRepository(db *sqlx.DB) *Repository {
+func NewRepository(db *sqlx.DB, cfg Config) *Repository {
 	notificationRepo := NewNotificationMysql(db)
 	return &Repository{
 		Authorization: NewAuthMysql(db),
-		Admin:         NewAdminMysql(db),
+		Admin:         NewAdminMysql(db, cfg),
 		Ticket:        NewTicketMysql(db, notificationRepo),
 		Notification:  NewNotificationMysql(db),
 	}
