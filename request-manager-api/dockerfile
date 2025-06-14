@@ -18,4 +18,5 @@ COPY --from=builder /app/main .
 COPY --from=builder /app/configs ./configs
 COPY --from=builder /usr/bin/mysql /usr/bin/mysql
 
+EXPOSE 8000
 CMD ["./main"]
