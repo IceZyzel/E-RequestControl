@@ -10,19 +10,12 @@ import (
 	"request_manager_api/pkg/services"
 	"syscall"
 
-	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
 func main() {
-	if err := initConfig(); err != nil {
-		logrus.Fatalf("error initializing configs: %s", err.Error())
-	}
 
-	if err := godotenv.Load(); err != nil {
-		logrus.Fatalf("Error loading env variables: %s", err.Error())
-	}
 	db, err := repository.NewMysqlDb(repository.Config{
 		Host:     os.Getenv("DB_HOST"),     // "req-db"
 		Port:     os.Getenv("DB_PORT"),     // "3306"
