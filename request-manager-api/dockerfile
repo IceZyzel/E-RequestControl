@@ -15,6 +15,7 @@ FROM alpine:3.21
 
 WORKDIR /app
 COPY --from=builder /app/main .
+COPY --from=builder /app/.env .env
 COPY --from=builder /app/configs ./configs
 COPY --from=builder /usr/bin/mysql /usr/bin/mysql
 
