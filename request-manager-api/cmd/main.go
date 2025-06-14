@@ -31,7 +31,7 @@ func main() {
 
 	srv := new(request_manager_api.Server)
 
-	port := getEnv("PORT")
+	port := "8000"
 
 	go func() {
 		if err := srv.Run(port, handlers.InitRoutes()); err != nil {
