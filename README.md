@@ -20,4 +20,26 @@ The system is built using the following technologies:
 - **Orchestration**: Kubernetes (EKS) for managing containerized applications.
 - **CI/CD**: GitHub Actions for continuous integration and deployment.
 
+## 📊CI/CD Pipeline Diagram
 
+
+```mermaid
+graph TD
+    A[Start: Manual Launch] --> B[Code Check]
+    B --> C[Environment Setup]
+    C --> D[SonarQube Code Analysis]
+    D --> E[Build & Publish Images]
+    E --> F[Frontend → ECR]
+    E --> G[Backend → ECR]
+    E --> H[Database → ECR]
+    F --> I[Clean Old Images]
+    G --> I
+    H --> I
+    I --> J[Deploy to EKS]
+    J --> K[EKS Access Setup]
+    K --> L[Database Secrets]
+    L --> M[Install Cert-Manager]
+    M --> N[Monitoring: Prometheus & Loki]
+    N --> O[Deploy Helm Chart]
+    O --> P[Done]
+```
