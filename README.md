@@ -20,13 +20,4 @@ The system is built using the following technologies:
 - **Orchestration**: Kubernetes (EKS) for managing containerized applications.
 - **CI/CD**: GitHub Actions for continuous integration and deployment.
 
-## 🚀 Getting Started
 
-### Prerequisites
-
-- Docker
-- Kubernetes (EKS)
-- Helm
-- AWS CLI
-- Go
-- Node.js and np
